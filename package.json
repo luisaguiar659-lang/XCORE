@@ -11,10 +11,8 @@
     "build:win": "electron-builder --win --x64",
     "build": "electron-builder"
   },
-  "dependencies": {
-    "electron": "^38.1.0"
-  },
   "devDependencies": {
+    "electron": "^38.1.0",
     "electron-builder": "^26.0.12"
   },
   "build": {
