@@ -1,0 +1,9 @@
+{
+  "name": "xcore",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Automation orchestrator for WhatsApp Business and provisioning panels",
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}
