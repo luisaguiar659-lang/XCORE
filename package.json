@@ -8,8 +8,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "build:win": "electron-builder --win --x64",
-    "build": "electron-builder"
+    "build:win": "electron-builder --win --x64 --publish never",
+    "build": "electron-builder --publish never"
   },
   "devDependencies": {
     "electron": "^38.1.0",
