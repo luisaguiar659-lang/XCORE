@@ -1,17 +1,15 @@
 # XCORE
 
-Aplicativo desktop instalável para orquestrar automações de atendimento e provisionamento.
+Aplicativo **Android instalável** para gerenciar a automação de atendimento e provisionamento do XCORE.
 
-## Primeiro build
+## Versão Android
 
-A versão **0.2.0** já contém:
-- Aplicativo desktop Electron.
-- Dashboard visual.
-- Navegação por Dashboard, Integrações, Automação e Configurações.
-- Modo **Demo** para testar o fluxo sem acessar serviços externos.
-- Configuração local.
-- Estrutura separada para integrações.
-- Pipeline GitHub Actions para gerar instalador Windows (.exe).
+A versão **0.3.0** inicia a migração para Android nativo:
+- Aplicativo Android com interface nativa.
+- Dashboard, Automação e Configurações.
+- Modo Demo para validar o fluxo sem acessar serviços externos.
+- Estrutura preparada para integrações autorizadas.
+- GitHub Actions gera um APK de teste (debug).
 
 ## Fluxo planejado
 
@@ -25,38 +23,18 @@ A versão **0.2.0** já contém:
 
 ## Estrutura
 
-```
-XCORE/
-├── app/
-│   ├── main/
-│   ├── preload/
-│   └── renderer/
-├── core/
-│   ├── config.js
-│   └── orchestrator.js
-├── integrations/
-├── .github/workflows/
-└── package.json
-```
+XCORE/app/src/main/ contém a aplicação Android nativa.
+
+## Build Android
+
+O workflow **Build XCORE Android** instala o SDK Android e gera o APK em app/build/outputs/apk/debug/. O APK será disponibilizado como artifact **XCORE-Android**.
 
 ## Segurança
 
 Credenciais, tokens, cookies e senhas não devem ser commitados no GitHub. As integrações de produção devem usar endpoints e métodos de autenticação autorizados pelos respectivos serviços.
 
-## Build Windows
-
-No ambiente local:
-```bash
-npm install
-npm run build:win
-```
-
-O instalador será gerado em `release/`.
-
-Também existe o workflow **Build XCORE Windows** em GitHub Actions. Ele pode ser executado manualmente pelo GitHub Actions e publica o instalador como artifact.
-
 ## Status
 
-**Base do aplicativo:** pronta.
+**Aplicativo Android base:** em construção e preparado para o primeiro APK.
 
-**Integrações reais:** aguardando as URLs, documentação/API, método de autenticação e campos exigidos por WhatsApp Business, Masterflix, XCloud e GerênciaApp. Não foram inventados endpoints.
+**Integrações reais:** aguardando URLs, documentação/API, método de autenticação e campos exigidos por WhatsApp Business, Masterflix, XCloud e GerênciaApp. Não foram inventados endpoints.
