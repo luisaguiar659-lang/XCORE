@@ -21,7 +21,6 @@ public class MainActivity extends Activity {
     private final int accent = Color.rgb(108, 99, 255);
     private final int success = Color.rgb(65, 202, 139);
     private final int warning = Color.rgb(245, 180, 70);
-    private final int danger = Color.rgb(240, 90, 90);
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -248,8 +247,8 @@ public class MainActivity extends Activity {
 
         addIntegration("W", "WhatsApp Business", Color.rgb(38, 178, 93), "Canal de atendimento");
         addIntegration("M", "Masterflix", Color.rgb(239, 139, 34), "Criação de testes");
-        addIntegration("X", "XCloud", Color.rgb(33, 155, 224), "Provisionamento");
-        addIntegration("G", "GerênciaApp", Color.rgb(132, 99, 255), "Gestão do cliente");
+        addIntegration("MX", "Master XCloud", Color.rgb(33, 155, 224), "Provisionamento");
+        addIntegration("MI", "Master IBO", Color.rgb(132, 99, 255), "Gestão do cliente");
 
         LinearLayout demo = box();
         TextView h = label("Teste rápido", 18);
@@ -270,8 +269,8 @@ public class MainActivity extends Activity {
         phone.setText("5511999999999");
         phone.setTextColor(text);
         phone.setHintTextColor(muted);
-        phone.setInputType(2);
         phone.setSingleLine(true);
+        phone.setInputType(2);
         phone.setPadding(dp(4), dp(10), dp(4), dp(6));
 
         demo.addView(name);
@@ -297,8 +296,8 @@ public class MainActivity extends Activity {
             out.setTextColor(muted);
             out.setText("1/5  Criando teste…");
             out.postDelayed(() -> out.setText("2/5  Preparando MEC / M3U…"), 450);
-            out.postDelayed(() -> out.setText("3/5  Simulando XCloud…"), 900);
-            out.postDelayed(() -> out.setText("4/5  Simulando GerênciaApp…"), 1350);
+            out.postDelayed(() -> out.setText("3/5  Simulando Master XCloud…"), 900);
+            out.postDelayed(() -> out.setText("4/5  Simulando Master IBO…"), 1350);
             out.postDelayed(() -> {
                 out.setText("✓  Demonstração concluída");
                 out.setTextColor(success);
@@ -323,8 +322,8 @@ public class MainActivity extends Activity {
             {"01", "Receber mensagem", "WhatsApp Business"},
             {"02", "Criar teste", "Masterflix"},
             {"03", "Ativar MEC e obter M3U", "Masterflix"},
-            {"04", "Enviar M3U + MEC", "XCloud"},
-            {"05", "Enviar M3U + MEC", "GerênciaApp"},
+            {"04", "Enviar M3U + MEC", "Master XCloud"},
+            {"05", "Enviar M3U + MEC", "Master IBO"},
             {"06", "Responder cliente", "WhatsApp Business"}
         };
 
