@@ -11,14 +11,17 @@ import android.widget.*;
 public class MainActivity extends Activity {
     private LinearLayout content;
     private TextView status;
-    private final int bg = Color.rgb(8, 13, 27);
-    private final int surface = Color.rgb(17, 25, 45);
-    private final int surface2 = Color.rgb(22, 31, 54);
-    private final int text = Color.rgb(239, 242, 250);
+    private Button dashboardTab, automationTab, settingsTab;
+
+    private final int bg = Color.rgb(7, 11, 23);
+    private final int surface = Color.rgb(16, 24, 43);
+    private final int surface2 = Color.rgb(23, 32, 57);
+    private final int text = Color.rgb(242, 244, 250);
     private final int muted = Color.rgb(151, 163, 190);
     private final int accent = Color.rgb(108, 99, 255);
     private final int success = Color.rgb(65, 202, 139);
     private final int warning = Color.rgb(245, 180, 70);
+    private final int danger = Color.rgb(240, 90, 90);
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,7 +40,6 @@ public class MainActivity extends Activity {
         v.setTextColor(text);
         v.setTextSize(size);
         v.setGravity(Gravity.CENTER_VERTICAL);
-        v.setFontFeatureSettings("kern");
         return v;
     }
 
@@ -68,12 +70,21 @@ public class MainActivity extends Activity {
         b.setAllCaps(false);
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(4), 0, dp(4), 0);
-        b.setBackground(background(surface2, 14));
+        b.setBackground(background(surface2, 16));
         b.setOnClickListener(v -> action.run());
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(46), 1);
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(48), 1);
         p.setMargins(dp(3), 0, dp(3), 0);
         b.setLayoutParams(p);
         return b;
+    }
+
+    private void setActive(Button active) {
+        Button[] all = {dashboardTab, automationTab, settingsTab};
+        for (Button b : all) {
+            if (b == null) continue;
+            b.setBackground(background(b == active ? accent : surface2, 16));
+            b.setTextColor(text);
+        }
     }
 
     private LinearLayout box() {
@@ -90,45 +101,80 @@ public class MainActivity extends Activity {
     private LinearLayout sectionTitle(String title, String subtitle) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
-        TextView h = label(title, 24);
+        TextView h = label(title, 25);
         h.setTypeface(null, 1);
         wrap.addView(h);
         TextView sub = muted(subtitle);
         sub.setPadding(0, dp(4), 0, 0);
         wrap.addView(sub);
-        margin(wrap, 8, 8);
+        margin(wrap, 10, 8);
         return wrap;
     }
 
-    private void addIntegration(String icon, String name) {
+    private TextView chip(String textValue, int color, int bgColor) {
+        TextView v = label(textValue, 10);
+        v.setTextColor(color);
+        v.setGravity(Gravity.CENTER);
+        v.setTypeface(null, 1);
+        v.setPadding(dp(9), dp(6), dp(9), dp(6));
+        v.setBackground(background(bgColor, 12));
+        return v;
+    }
+
+    private void addIntegration(String icon, String name, int iconColor, String detail) {
         LinearLayout card = box();
+        card.setPadding(dp(14), dp(14), dp(14), dp(14));
+        card.setOnClickListener(v -> showIntegration(name));
+
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView iconView = label(icon, 22);
+        iconView.setTextColor(Color.WHITE);
         iconView.setGravity(Gravity.CENTER);
-        iconView.setBackground(background(surface2, 14));
-        row.addView(iconView, new LinearLayout.LayoutParams(dp(46), dp(46)));
+        iconView.setTypeface(null, 1);
+        iconView.setBackground(background(iconColor, 14));
+        row.addView(iconView, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
-        info.setPadding(dp(12), 0, 0, 0);
+        info.setPadding(dp(13), 0, dp(8), 0);
+
         TextView title = label(name, 16);
         title.setTypeface(null, 1);
         info.addView(title);
-        info.addView(muted("Integração preparada para conexão."));
+
+        TextView desc = muted(detail);
+        desc.setPadding(0, dp(3), 0, 0);
+        info.addView(desc);
+
         row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
-
-        TextView badge = label("PENDENTE", 10);
-        badge.setTextColor(warning);
-        badge.setGravity(Gravity.CENTER);
-        badge.setPadding(dp(8), dp(5), dp(8), dp(5));
-        badge.setBackground(background(Color.rgb(62, 48, 27), 10));
-        row.addView(badge);
-
+        row.addView(chip("PENDENTE", warning, Color.rgb(62, 48, 27)));
         card.addView(row);
+
         content.addView(card);
     }
+
+    private void addStat(String value, String caption) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(14), dp(13), dp(14), dp(13));
+        card.setBackground(background(surface, 16));
+
+        TextView number = label(value, 21);
+        number.setTypeface(null, 1);
+        card.addView(number);
+        TextView textView = muted(caption);
+        textView.setPadding(0, dp(2), 0, 0);
+        card.addView(textView);
+
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1);
+        p.setMargins(dp(3), 0, dp(3), 0);
+        card.setLayoutParams(p);
+        statsRow.addView(card);
+    }
+
+    private LinearLayout statsRow;
 
     private void build() {
         LinearLayout root = new LinearLayout(this);
@@ -138,15 +184,16 @@ public class MainActivity extends Activity {
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = label("XCORE", 28);
+
+        TextView title = label("XCORE", 29);
         title.setTypeface(null, 1);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
 
         TextView pill = label("●  ONLINE", 11);
         pill.setTextColor(success);
         pill.setGravity(Gravity.CENTER);
-        pill.setPadding(dp(10), dp(6), dp(10), dp(6));
-        pill.setBackground(background(Color.rgb(20, 55, 46), 12));
+        pill.setPadding(dp(11), dp(7), dp(11), dp(7));
+        pill.setBackground(background(Color.rgb(17, 57, 46), 14));
         header.addView(pill);
         root.addView(header);
 
@@ -155,19 +202,22 @@ public class MainActivity extends Activity {
         root.addView(subtitle);
 
         LinearLayout navs = new LinearLayout(this);
-        navs.setPadding(0, 0, 0, dp(4));
-        navs.addView(nav("Dashboard", this::dashboard));
-        navs.addView(nav("Automação", this::automation));
-        navs.addView(nav("Configurações", this::settings));
+        dashboardTab = nav("Dashboard", this::dashboard);
+        automationTab = nav("Automação", this::automation);
+        settingsTab = nav("Configurações", this::settings);
+        navs.addView(dashboardTab);
+        navs.addView(automationTab);
+        navs.addView(settingsTab);
         root.addView(navs);
 
         status = muted("●  Sistema pronto para demonstração");
         status.setTextColor(success);
-        status.setPadding(dp(4), dp(6), 0, dp(8));
+        status.setPadding(dp(4), dp(8), 0, dp(8));
         root.addView(status);
 
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
+
         ScrollView scroll = new ScrollView(this);
         scroll.setClipToPadding(false);
         scroll.setPadding(0, 0, 0, dp(8));
@@ -179,13 +229,27 @@ public class MainActivity extends Activity {
     }
 
     private void dashboard() {
+        setActive(dashboardTab);
         content.removeAllViews();
-        content.addView(sectionTitle("Dashboard", "Visão geral das integrações do XCORE."));
 
-        addIntegration("W", "WhatsApp Business");
-        addIntegration("M", "Masterflix");
-        addIntegration("X", "XCloud");
-        addIntegration("G", "GerênciaApp");
+        content.addView(sectionTitle("Dashboard", "Visão geral das integrações e operações."));
+
+        statsRow = new LinearLayout(this);
+        statsRow.setOrientation(LinearLayout.HORIZONTAL);
+        addStat("04", "Integrações");
+        addStat("00", "Ativas");
+        addStat("00", "Execuções");
+        content.addView(statsRow);
+
+        TextView integrations = label("Integrações", 17);
+        integrations.setTypeface(null, 1);
+        integrations.setPadding(dp(2), dp(15), 0, dp(3));
+        content.addView(integrations);
+
+        addIntegration("W", "WhatsApp Business", Color.rgb(38, 178, 93), "Canal de atendimento");
+        addIntegration("M", "Masterflix", Color.rgb(239, 139, 34), "Criação de testes");
+        addIntegration("X", "XCloud", Color.rgb(33, 155, 224), "Provisionamento");
+        addIntegration("G", "GerênciaApp", Color.rgb(132, 99, 255), "Gestão do cliente");
 
         LinearLayout demo = box();
         TextView h = label("Teste rápido", 18);
@@ -219,18 +283,30 @@ public class MainActivity extends Activity {
         run.setTextSize(14);
         run.setAllCaps(false);
         run.setTypeface(null, 1);
-        run.setBackground(background(accent, 14));
-        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, dp(50));
-        bp.setMargins(0, dp(10), 0, dp(8));
+        run.setBackground(background(accent, 16));
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, dp(52));
+        bp.setMargins(0, dp(11), 0, dp(8));
         run.setLayoutParams(bp);
 
         TextView out = muted("Aguardando execução…");
         out.setPadding(dp(4), dp(4), 0, 0);
+
         run.setOnClickListener(v -> {
-            out.setText("✓  Teste criado\n✓  MEC / M3U simulado\n✓  XCloud simulado\n✓  GerênciaApp simulado\n✓  Resposta WhatsApp simulada");
-            out.setTextColor(success);
-            status.setText("●  Demonstração concluída com sucesso");
-            status.setTextColor(success);
+            run.setEnabled(false);
+            run.setText("Executando…");
+            out.setTextColor(muted);
+            out.setText("1/5  Criando teste…");
+            out.postDelayed(() -> out.setText("2/5  Preparando MEC / M3U…"), 450);
+            out.postDelayed(() -> out.setText("3/5  Simulando XCloud…"), 900);
+            out.postDelayed(() -> out.setText("4/5  Simulando GerênciaApp…"), 1350);
+            out.postDelayed(() -> {
+                out.setText("✓  Demonstração concluída");
+                out.setTextColor(success);
+                status.setText("●  Demonstração concluída com sucesso");
+                status.setTextColor(success);
+                run.setText("Executar novamente");
+                run.setEnabled(true);
+            }, 1800);
         });
 
         demo.addView(run);
@@ -239,55 +315,81 @@ public class MainActivity extends Activity {
     }
 
     private void automation() {
+        setActive(automationTab);
         content.removeAllViews();
         content.addView(sectionTitle("Automação", "Fluxo planejado para o provisionamento."));
 
-        String[] steps = {
-            "01", "Receber mensagem do WhatsApp Business",
-            "02", "Criar teste no Masterflix",
-            "03", "Ativar MEC e obter M3U",
-            "04", "Enviar M3U + MEC para XCloud",
-            "05", "Enviar M3U + MEC para GerênciaApp",
-            "06", "Responder o cliente"
+        String[][] steps = {
+            {"01", "Receber mensagem", "WhatsApp Business"},
+            {"02", "Criar teste", "Masterflix"},
+            {"03", "Ativar MEC e obter M3U", "Masterflix"},
+            {"04", "Enviar M3U + MEC", "XCloud"},
+            {"05", "Enviar M3U + MEC", "GerênciaApp"},
+            {"06", "Responder cliente", "WhatsApp Business"}
         };
 
-        for (int i = 0; i < steps.length; i += 2) {
+        for (int i = 0; i < steps.length; i++) {
             LinearLayout card = box();
+            card.setPadding(dp(14), dp(14), dp(14), dp(14));
+
             LinearLayout row = new LinearLayout(this);
             row.setGravity(Gravity.CENTER_VERTICAL);
 
-            TextView number = label(steps[i], 13);
+            TextView number = label(steps[i][0], 12);
             number.setTextColor(Color.WHITE);
             number.setGravity(Gravity.CENTER);
             number.setTypeface(null, 1);
             number.setBackground(background(accent, 12));
-            row.addView(number, new LinearLayout.LayoutParams(dp(40), dp(40)));
+            row.addView(number, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
-            TextView description = label(steps[i + 1], 15);
-            description.setPadding(dp(12), 0, 0, 0);
-            row.addView(description, new LinearLayout.LayoutParams(0, -2, 1));
+            LinearLayout info = new LinearLayout(this);
+            info.setOrientation(LinearLayout.VERTICAL);
+            info.setPadding(dp(13), 0, 0, 0);
+
+            TextView step = label(steps[i][1], 15);
+            step.setTypeface(null, 1);
+            info.addView(step);
+            info.addView(muted(steps[i][2]));
+
+            row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+            row.addView(chip("PENDENTE", warning, Color.rgb(62, 48, 27)));
             card.addView(row);
             content.addView(card);
         }
     }
 
     private void settings() {
+        setActive(settingsTab);
         content.removeAllViews();
         content.addView(sectionTitle("Configurações", "Controle o ambiente e as integrações."));
 
         LinearLayout mode = box();
-        TextView modeTitle = label("Ambiente", 16);
+        TextView modeTitle = label("Ambiente", 17);
         modeTitle.setTypeface(null, 1);
         mode.addView(modeTitle);
-        mode.addView(muted("Modo atual: DEMO / desenvolvimento"));
+        mode.addView(muted("Selecione o ambiente usado pelo XCORE."));
+
+        RadioGroup group = new RadioGroup(this);
+        group.setOrientation(RadioGroup.VERTICAL);
+        RadioButton demo = new RadioButton(this);
+        demo.setText("  DEMO / desenvolvimento");
+        demo.setTextColor(text);
+        demo.setChecked(true);
+        RadioButton production = new RadioButton(this);
+        production.setText("  PRODUÇÃO");
+        production.setTextColor(text);
+        group.addView(demo);
+        group.addView(production);
+        mode.addView(group);
 
         Button save = new Button(this);
         save.setText("Salvar configurações");
         save.setTextColor(Color.WHITE);
         save.setAllCaps(false);
-        save.setBackground(background(accent, 14));
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(48));
-        sp.setMargins(0, dp(12), 0, 0);
+        save.setTypeface(null, 1);
+        save.setBackground(background(accent, 16));
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(50));
+        sp.setMargins(0, dp(10), 0, 0);
         save.setLayoutParams(sp);
         save.setOnClickListener(v -> {
             status.setText("●  Configuração salva localmente");
@@ -297,10 +399,15 @@ public class MainActivity extends Activity {
         content.addView(mode);
 
         LinearLayout security = box();
-        TextView sh = label("Segurança", 16);
+        TextView sh = label("Segurança", 17);
         sh.setTypeface(null, 1);
         security.addView(sh);
         security.addView(muted("Credenciais e endpoints de produção devem ser configurados somente com dados autorizados."));
+        security.addView(chip("CREDENCIAIS PROTEGIDAS", success, Color.rgb(18, 55, 45)));
         content.addView(security);
+    }
+
+    private void showIntegration(String name) {
+        Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
     }
 }
