@@ -18,7 +18,8 @@ public class MainActivity extends Activity {
     private final int surface2 = Color.rgb(23, 32, 57);
     private final int text = Color.rgb(242, 244, 250);
     private final int muted = Color.rgb(151, 163, 190);
-    private final int accent = Color.rgb(108, 99, 255);
+    private final int accent = Color.rgb(255, 35, 58);
+    private final int accentDark = Color.rgb(190, 12, 38);
     private final int success = Color.rgb(65, 202, 139);
     private final int warning = Color.rgb(245, 180, 70);
 
@@ -87,6 +88,7 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout box() {
+
         LinearLayout l = new LinearLayout(this);
         l.setOrientation(LinearLayout.VERTICAL);
         l.setPadding(dp(18), dp(16), dp(18), dp(16));
@@ -122,18 +124,28 @@ public class MainActivity extends Activity {
 
     private void addIntegration(int iconRes, String name, String detail) {
         LinearLayout card = box();
-        card.setPadding(dp(14), dp(14), dp(14), dp(14));
+        card.setPadding(0, 0, 0, 0);
         card.setOnClickListener(v -> showIntegration(name));
 
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
+        View stripe = new View(this);
+        int stripeColor = name.equals("WhatsApp Business") ? Color.rgb(0, 220, 125)
+                : name.equals("Masterflix") ? Color.rgb(255, 153, 0)
+                : name.equals("Master XCloud") ? Color.rgb(20, 145, 255)
+                : Color.rgb(170, 55, 255);
+        stripe.setBackgroundColor(stripeColor);
+        row.addView(stripe, new LinearLayout.LayoutParams(dp(5), -1));
+
         ImageView iconView = new ImageView(this);
         iconView.setImageResource(iconRes);
         iconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        iconView.setPadding(dp(5), dp(5), dp(5), dp(5));
+        iconView.setPadding(dp(4), dp(4), dp(4), dp(4));
         iconView.setBackground(background(surface2, 14));
-        row.addView(iconView, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(58), dp(58));
+        ip.setMargins(dp(14), dp(10), 0, dp(10));
+        row.addView(iconView, ip);
 
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
@@ -148,9 +160,18 @@ public class MainActivity extends Activity {
         info.addView(desc);
 
         row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
-        row.addView(chip("PENDENTE", warning, Color.rgb(62, 48, 27)));
-        card.addView(row);
 
+        TextView arrow = label("›", 25);
+        arrow.setTextColor(muted);
+        arrow.setGravity(Gravity.CENTER);
+        row.addView(arrow, new LinearLayout.LayoutParams(dp(26), dp(60)));
+
+        TextView pending = chip("PENDENTE", warning, Color.rgb(62, 48, 27));
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(-2, -2);
+        cp.setMargins(0, 0, dp(7), 0);
+        row.addView(pending, cp);
+
+        card.addView(row);
         content.addView(card);
     }
 
@@ -160,12 +181,19 @@ public class MainActivity extends Activity {
         card.setPadding(dp(14), dp(13), dp(14), dp(13));
         card.setBackground(background(surface, 16));
 
-        TextView number = label(value, 21);
+        TextView number = label(value, 23);
         number.setTypeface(null, 1);
         card.addView(number);
+
         TextView textView = muted(caption);
         textView.setPadding(0, dp(2), 0, 0);
         card.addView(textView);
+
+        View line = new View(this);
+        line.setBackgroundColor(accent);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(58), dp(3));
+        lp.setMargins(0, dp(9), 0, 0);
+        card.addView(line, lp);
 
         LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -2, 1);
         p.setMargins(dp(3), 0, dp(3), 0);
@@ -198,8 +226,8 @@ public class MainActivity extends Activity {
         TextView pill = label("●  ONLINE", 11);
         pill.setTextColor(success);
         pill.setGravity(Gravity.CENTER);
-        pill.setPadding(dp(11), dp(7), dp(11), dp(7));
-        pill.setBackground(background(Color.rgb(17, 57, 46), 14));
+        pill.setPadding(dp(12), dp(8), dp(12), dp(8));
+        pill.setBackground(background(Color.rgb(12, 55, 44), 16));
         header.addView(pill);
         root.addView(header);
 
@@ -218,7 +246,8 @@ public class MainActivity extends Activity {
 
         status = muted("●  Sistema pronto para demonstração");
         status.setTextColor(success);
-        status.setPadding(dp(4), dp(8), 0, dp(8));
+        status.setPadding(dp(10), dp(10), dp(10), dp(10));
+        status.setBackground(background(Color.rgb(8, 22, 34), 14));
         root.addView(status);
 
         content = new LinearLayout(this);
@@ -229,6 +258,27 @@ public class MainActivity extends Activity {
         scroll.setPadding(0, 0, 0, dp(8));
         scroll.addView(content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        LinearLayout bottom = new LinearLayout(this);
+        bottom.setGravity(Gravity.CENTER);
+        bottom.setPadding(0, dp(6), 0, 0);
+        bottom.setBackground(background(Color.rgb(9, 15, 29), 14));
+
+        String[] bottomItems = {"⌂\nInício", "ϟ\nAutomação", "◷\nHistórico", "⚙\nConfigurações"};
+        for (int i = 0; i < bottomItems.length; i++) {
+            TextView item = label(bottomItems[i], 11);
+            item.setGravity(Gravity.CENTER);
+            item.setTextColor(i == 0 ? accent : muted);
+            final int index = i;
+            item.setOnClickListener(v -> {
+                if (index == 0) dashboard();
+                else if (index == 1) automation();
+                else if (index == 3) settings();
+                else Toast.makeText(this, "Histórico • disponível em breve", Toast.LENGTH_SHORT).show();
+            });
+            bottom.addView(item, new LinearLayout.LayoutParams(0, dp(52), 1));
+        }
+        root.addView(bottom);
 
         setContentView(root);
         dashboard();
@@ -280,19 +330,28 @@ public class MainActivity extends Activity {
         phone.setInputType(2);
         phone.setPadding(dp(4), dp(10), dp(4), dp(6));
 
-        demo.addView(name);
-        demo.addView(phone);
+        LinearLayout formRow = new LinearLayout(this);
+        formRow.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout fields = new LinearLayout(this);
+        fields.setOrientation(LinearLayout.VERTICAL);
+        fields.addView(name);
+        fields.addView(phone);
+        formRow.addView(fields, new LinearLayout.LayoutParams(0, -2, 1));
 
         Button run = new Button(this);
-        run.setText("Executar demonstração");
+        run.setText("▶  EXECUTAR");
         run.setTextColor(Color.WHITE);
         run.setTextSize(14);
         run.setAllCaps(false);
         run.setTypeface(null, 1);
         run.setBackground(background(accent, 16));
-        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, dp(52));
-        bp.setMargins(0, dp(11), 0, dp(8));
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(dp(142), dp(52));
+        bp.setMargins(dp(10), dp(11), 0, dp(8));
         run.setLayoutParams(bp);
+
+        formRow.addView(run);
+        demo.addView(formRow);
 
         TextView out = muted("Aguardando execução…");
         out.setPadding(dp(4), dp(4), 0, 0);
