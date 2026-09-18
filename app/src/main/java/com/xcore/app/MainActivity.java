@@ -376,6 +376,10 @@ public class MainActivity extends Activity {
 
         demo.addView(out);
         content.addView(demo);
+
+        // Espaço extra para que a barra inferior fixa não cubra o final do formulário.
+        Space bottomSpace = new Space(this);
+        content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(82)));
     }
 
     private void automation() {
