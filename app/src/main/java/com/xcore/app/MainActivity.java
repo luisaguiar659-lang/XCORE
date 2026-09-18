@@ -374,7 +374,6 @@ public class MainActivity extends Activity {
             }, 1800);
         });
 
-        demo.addView(run);
         demo.addView(out);
         content.addView(demo);
     }
