@@ -120,7 +120,7 @@ public class MainActivity extends Activity {
         return v;
     }
 
-    private void addIntegration(String icon, String name, int iconColor, String detail) {
+    private void addIntegration(int iconRes, String name, String detail) {
         LinearLayout card = box();
         card.setPadding(dp(14), dp(14), dp(14), dp(14));
         card.setOnClickListener(v -> showIntegration(name));
@@ -128,11 +128,11 @@ public class MainActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView iconView = label(icon, 22);
-        iconView.setTextColor(Color.WHITE);
-        iconView.setGravity(Gravity.CENTER);
-        iconView.setTypeface(null, 1);
-        iconView.setBackground(background(iconColor, 14));
+        ImageView iconView = new ImageView(this);
+        iconView.setImageResource(iconRes);
+        iconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        iconView.setPadding(dp(5), dp(5), dp(5), dp(5));
+        iconView.setBackground(background(surface2, 14));
         row.addView(iconView, new LinearLayout.LayoutParams(dp(48), dp(48)));
 
         LinearLayout info = new LinearLayout(this);
@@ -184,8 +184,15 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
 
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(com.xcore.app.R.drawable.xcore_logo);
+        logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        logo.setPadding(dp(2), dp(2), dp(2), dp(2));
+        header.addView(logo, new LinearLayout.LayoutParams(dp(44), dp(44)));
+
         TextView title = label("XCORE", 29);
         title.setTypeface(null, 1);
+        title.setPadding(dp(10), 0, 0, 0);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
 
         TextView pill = label("●  ONLINE", 11);
@@ -245,10 +252,10 @@ public class MainActivity extends Activity {
         integrations.setPadding(dp(2), dp(15), 0, dp(3));
         content.addView(integrations);
 
-        addIntegration("W", "WhatsApp Business", Color.rgb(38, 178, 93), "Canal de atendimento");
-        addIntegration("M", "Masterflix", Color.rgb(239, 139, 34), "Criação de testes");
-        addIntegration("MX", "Master XCloud", Color.rgb(33, 155, 224), "Provisionamento");
-        addIntegration("MI", "Master IBO", Color.rgb(132, 99, 255), "Gestão do cliente");
+        addIntegration(R.drawable.whatsapp_logo, "WhatsApp Business", "Canal de atendimento");
+        addIntegration(R.drawable.masterflix_logo, "Masterflix", "Criação de testes");
+        addIntegration(R.drawable.master_xcloud_logo, "Master XCloud", "Provisionamento");
+        addIntegration(R.drawable.master_ibo_logo, "Master IBO", "Gestão do cliente");
 
         LinearLayout demo = box();
         TextView h = label("Teste rápido", 18);
