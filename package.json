@@ -1,9 +1,44 @@
 {
   "name": "xcore",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Automation orchestrator for WhatsApp Business and provisioning panels",
+  "version": "0.2.0",
+  "description": "XCORE - aplicativo desktop instalável para automação autorizada",
+  "main": "app/main/main.js",
+  "author": "XCORE",
+  "license": "MIT",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "electron .",
+    "dev": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "electron": "^38.1.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.xcore.app",
+    "productName": "XCORE",
+    "directories": { "output": "release" },
+    "files": [
+      "app/**/*",
+      "core/**/*",
+      "integrations/**/*",
+      "package.json",
+      "LICENSE",
+      "README.md"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "XCORE-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
