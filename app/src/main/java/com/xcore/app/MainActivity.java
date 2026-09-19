@@ -1,17 +1,23 @@
 package com.xcore.app;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
+import com.xcore.app.engine.whatsapp.AndroidWhatsAppTriggerStore;
+import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
+import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
+import java.util.List;
 
 public class MainActivity extends Activity {
     private LinearLayout content;
     private TextView status;
     private Button dashboardTab, automationTab, settingsTab;
+    private AndroidWhatsAppTriggerStore triggerStore;
 
     private final int bg = Color.rgb(7, 11, 23);
     private final int surface = Color.rgb(16, 24, 43);
@@ -27,6 +33,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         getWindow().setStatusBarColor(bg);
         getWindow().setNavigationBarColor(bg);
+        triggerStore = new AndroidWhatsAppTriggerStore(this);
         build();
     }
 
@@ -387,6 +394,24 @@ public class MainActivity extends Activity {
         content.removeAllViews();
         content.addView(sectionTitle("Automação", "Fluxo planejado para o provisionamento."));
 
+        LinearLayout triggerBox = box();
+        TextView th = label("Gatilhos WhatsApp", 18);
+        th.setTypeface(null, 1);
+        triggerBox.addView(th);
+        triggerBox.addView(muted("Crie regras para decidir quais mensagens podem iniciar os fluxos do XCORE."));
+        Button manage = new Button(this);
+        manage.setText("⚡  Gerenciar gatilhos");
+        manage.setTextColor(Color.WHITE);
+        manage.setAllCaps(false);
+        manage.setTypeface(null, 1);
+        manage.setBackground(background(accent, 16));
+        LinearLayout.LayoutParams mp = new LinearLayout.LayoutParams(-1, dp(50));
+        mp.setMargins(0, dp(12), 0, 0);
+        manage.setLayoutParams(mp);
+        manage.setOnClickListener(v -> whatsappTriggers());
+        triggerBox.addView(manage);
+        content.addView(triggerBox);
+
         String[][] steps = {
             {"01", "Receber mensagem", "WhatsApp Business"},
             {"02", "Criar teste", "Masterflix"},
@@ -424,6 +449,228 @@ public class MainActivity extends Activity {
             card.addView(row);
             content.addView(card);
         }
+    }
+
+    private void whatsappTriggers() {
+        setActive(automationTab);
+        content.removeAllViews();
+
+        LinearLayout heading = new LinearLayout(this);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+        TextView back = label("‹", 32);
+        back.setTextColor(text);
+        back.setGravity(Gravity.CENTER);
+        back.setOnClickListener(v -> automation());
+        heading.addView(back, new LinearLayout.LayoutParams(dp(42), dp(48)));
+
+        LinearLayout titles = new LinearLayout(this);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        TextView h = label("Gatilhos WhatsApp", 23);
+        h.setTypeface(null, 1);
+        titles.addView(h);
+        titles.addView(muted("Somente mensagens correspondentes a gatilhos ativos iniciam automações."));
+        heading.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
+        content.addView(heading);
+
+        Button add = new Button(this);
+        add.setText("+  Novo gatilho");
+        add.setTextColor(Color.WHITE);
+        add.setAllCaps(false);
+        add.setTypeface(null, 1);
+        add.setBackground(background(accent, 16));
+        LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, dp(50));
+        ap.setMargins(0, dp(10), 0, dp(8));
+        add.setLayoutParams(ap);
+        add.setOnClickListener(v -> showTriggerDialog(null));
+        content.addView(add);
+
+        List<WhatsAppTrigger> triggers = triggerStore.all();
+        if (triggers.isEmpty()) {
+            LinearLayout empty = box();
+            TextView eh = label("Nenhum gatilho configurado", 16);
+            eh.setTypeface(null, 1);
+            empty.addView(eh);
+            empty.addView(muted("Crie seu primeiro gatilho para definir quando o WhatsApp poderá iniciar um fluxo."));
+            content.addView(empty);
+        } else {
+            for (WhatsAppTrigger trigger : triggers) {
+                addTriggerCard(trigger);
+            }
+        }
+
+        Space bottomSpace = new Space(this);
+        content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(60)));
+    }
+
+    private void addTriggerCard(WhatsAppTrigger trigger) {
+        LinearLayout card = box();
+
+        LinearLayout top = new LinearLayout(this);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+
+        TextView name = label(trigger.getName().isEmpty() ? "Sem nome" : trigger.getName(), 17);
+        name.setTypeface(null, 1);
+        info.addView(name);
+
+        String rule = trigger.getMatchType().name() + " • \"" + trigger.getPattern() + "\"";
+        info.addView(muted(rule));
+        info.addView(muted("Fluxo: " + trigger.getFlowId()));
+
+        top.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+
+        CheckBox active = new CheckBox(this);
+        active.setChecked(trigger.isActive());
+        active.setText("Ativo");
+        active.setTextColor(trigger.isActive() ? success : muted);
+        active.setOnCheckedChangeListener((buttonView, checked) -> {
+            trigger.setActive(checked);
+            triggerStore.add(trigger);
+            buttonView.setTextColor(checked ? success : muted);
+            status.setText(checked ? "●  Gatilho ativado" : "●  Gatilho desativado");
+            status.setTextColor(checked ? success : warning);
+        });
+        top.addView(active);
+        card.addView(top);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setGravity(Gravity.END);
+        actions.setPadding(0, dp(8), 0, 0);
+
+        Button edit = smallAction("Editar");
+        edit.setOnClickListener(v -> showTriggerDialog(trigger));
+        actions.addView(edit);
+
+        Button delete = smallAction("Excluir");
+        delete.setTextColor(Color.rgb(255, 110, 120));
+        delete.setOnClickListener(v -> confirmDeleteTrigger(trigger));
+        actions.addView(delete);
+
+        card.addView(actions);
+        content.addView(card);
+    }
+
+    private Button smallAction(String title) {
+        Button b = new Button(this);
+        b.setText(title);
+        b.setTextColor(text);
+        b.setTextSize(12);
+        b.setAllCaps(false);
+        b.setBackground(background(surface2, 12));
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp(92), dp(42));
+        p.setMargins(dp(5), 0, 0, 0);
+        b.setLayoutParams(p);
+        return b;
+    }
+
+    private void showTriggerDialog(final WhatsAppTrigger existing) {
+        LinearLayout form = new LinearLayout(this);
+        form.setOrientation(LinearLayout.VERTICAL);
+        form.setPadding(dp(20), dp(4), dp(20), 0);
+
+        EditText name = new EditText(this);
+        name.setHint("Nome do gatilho");
+        name.setTextColor(text);
+        name.setHintTextColor(muted);
+        name.setSingleLine(true);
+        if (existing != null) name.setText(existing.getName());
+        form.addView(name);
+
+        EditText pattern = new EditText(this);
+        pattern.setHint("Mensagem / palavra-chave");
+        pattern.setTextColor(text);
+        pattern.setHintTextColor(muted);
+        pattern.setSingleLine(true);
+        if (existing != null) pattern.setText(existing.getPattern());
+        form.addView(pattern);
+
+        Spinner type = new Spinner(this);
+        String[] types = {"CONTÉM", "EXATO", "COMEÇA COM", "PALAVRA-CHAVE"};
+        type.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, types));
+        if (existing != null) {
+            type.setSelection(matchTypePosition(existing.getMatchType()));
+        }
+        form.addView(type);
+
+        Spinner flow = new Spinner(this);
+        String[] flows = {WhatsAppFlowIds.TESTE_CLIENTE, WhatsAppFlowIds.VENDA, WhatsAppFlowIds.SUPORTE};
+        flow.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, flows));
+        if (existing != null) flow.setSelection(flowPosition(existing.getFlowId()));
+        form.addView(flow);
+
+        CheckBox active = new CheckBox(this);
+        active.setText("Gatilho ativo");
+        active.setTextColor(text);
+        active.setChecked(existing == null || existing.isActive());
+        form.addView(active);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(existing == null ? "Novo gatilho" : "Editar gatilho")
+                .setView(form)
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton(existing == null ? "Criar" : "Salvar", null)
+                .create();
+
+        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String triggerName = name.getText().toString().trim();
+            String triggerPattern = pattern.getText().toString().trim();
+
+            if (triggerName.isEmpty() || triggerPattern.isEmpty()) {
+                Toast.makeText(this, "Preencha o nome e o gatilho.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            WhatsAppTrigger.MatchType matchType = positionMatchType(type.getSelectedItemPosition());
+            String flowId = flows[flow.getSelectedItemPosition()];
+
+            WhatsAppTrigger saved = existing == null
+                    ? new WhatsAppTrigger(triggerName, matchType, triggerPattern, flowId, active.isChecked())
+                    : new WhatsAppTrigger(existing.getId(), triggerName, matchType, triggerPattern, flowId, active.isChecked());
+
+            triggerStore.add(saved);
+            dialog.dismiss();
+            status.setText("●  Gatilho salvo");
+            status.setTextColor(success);
+            whatsappTriggers();
+        }));
+
+        dialog.show();
+    }
+
+    private int matchTypePosition(WhatsAppTrigger.MatchType type) {
+        if (type == WhatsAppTrigger.MatchType.EXACT) return 1;
+        if (type == WhatsAppTrigger.MatchType.STARTS_WITH) return 2;
+        if (type == WhatsAppTrigger.MatchType.KEYWORD) return 3;
+        return 0;
+    }
+
+    private WhatsAppTrigger.MatchType positionMatchType(int position) {
+        if (position == 1) return WhatsAppTrigger.MatchType.EXACT;
+        if (position == 2) return WhatsAppTrigger.MatchType.STARTS_WITH;
+        if (position == 3) return WhatsAppTrigger.MatchType.KEYWORD;
+        return WhatsAppTrigger.MatchType.CONTAINS;
+    }
+
+    private int flowPosition(String flowId) {
+        if (WhatsAppFlowIds.VENDA.equals(flowId)) return 1;
+        if (WhatsAppFlowIds.SUPORTE.equals(flowId)) return 2;
+        return 0;
+    }
+
+    private void confirmDeleteTrigger(final WhatsAppTrigger trigger) {
+        new AlertDialog.Builder(this)
+                .setTitle("Excluir gatilho")
+                .setMessage("Excluir \"" + trigger.getName() + "\"?")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Excluir", (dialog, which) -> {
+                    triggerStore.remove(trigger.getId());
+                    status.setText("●  Gatilho excluído");
+                    status.setTextColor(success);
+                    whatsappTriggers();
+                })
+                .show();
     }
 
     private void settings() {
