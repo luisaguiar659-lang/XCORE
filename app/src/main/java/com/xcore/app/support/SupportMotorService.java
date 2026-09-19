@@ -17,6 +17,22 @@ public class SupportMotorService extends Service {
 
     public static boolean isRunning() { return instance != null; }
     public static final String ACTION_START = "com.xcore.app.support.START_MOTOR";
+    public static final String EXTRA_TRIGGER_GROUP = "com.xcore.app.support.TRIGGER_GROUP";
+
+    public static void startFromSupportNotification(android.content.Context context, String groupName) {
+        if (isRunning()) return;
+        Intent intent = new Intent(context, SupportMotorService.class);
+        intent.setAction(ACTION_START);
+        intent.putExtra(EXTRA_TRIGGER_GROUP, groupName);
+        try {
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent);
+            else context.startService(intent);
+        } catch (Exception ignored) {
+            // Android may reject a background FGS start on some versions/devices.
+            // The persistent XCORE notification remains available for manual activation.
+            SupportMotorNotification.showStopped(context);
+        }
+    }
     private static final long LOOP_MS = 1000L;
     private final Handler handler = new Handler();
     private final Map<String, Long> nextRun = new HashMap<>();
@@ -46,8 +62,17 @@ public class SupportMotorService extends Service {
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (nextRun.isEmpty()) {
             long now = SystemClock.elapsedRealtime();
+            String triggerGroup = intent == null ? "" : intent.getStringExtra(EXTRA_TRIGGER_GROUP);
             for (SupportGroup g : new SupportGroupStore(this).list()) {
                 if (g.isActive()) nextRun.put(g.getId(), now + intervalMs(g));
+            }
+            if (!triggerGroup.isEmpty()) {
+                SupportMotorNotification.ensureChannel(this);
+                android.app.NotificationManager nm = (android.app.NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+                if (nm != null) nm.notify(SupportMotorNotification.NOTIFICATION_ID,
+                        SupportMotorNotification.build(this, true,
+                                "Motor ativo • gatilho: " + triggerGroup,
+                                SupportMotorNotification.ACTION_PAUSE, "PAUSAR MOTOR"));
             }
         }
         handler.removeCallbacks(loop);
