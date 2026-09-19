@@ -1,28 +1,25 @@
 # XCORE Backend
 
-Este serviço recebe o webhook do WhatsApp Business, encontra comandos configurados e envia respostas pelo canal oficial.
+Este serviço é usado somente para sincronizar os comandos/configurações do XCORE.
 
-## Variáveis obrigatórias
+O WhatsApp **não passa pelo backend**. O aplicativo Android captura as mensagens do WhatsApp Business usando `NotificationListenerService` e responde usando a ação de resposta (`RemoteInput`) da própria notificação.
 
-- WEBHOOK_VERIFY_TOKEN
-- WHATSAPP_API_URL
-- WHATSAPP_ACCESS_TOKEN
-- BACKEND_API_KEY
+## Variáveis
 
-O token do WhatsApp fica somente no servidor. Não coloque esse segredo no APK.
+- `PORT`
+- `BACKEND_API_KEY`
 
 ## Rotas
 
 - GET /health
-- GET /webhook/whatsapp — verificação do webhook
-- POST /webhook/whatsapp — entrada de mensagens
 - GET /api/commands — listar comandos
 - POST /api/commands — criar/atualizar comando
 - DELETE /api/commands/:id — remover comando
-- POST /api/conversations/clear — limpar estados
 
-O app deverá usar X-XCORE-API-KEY para sincronizar os comandos.
+O app usa `X-XCORE-API-KEY` somente para sincronizar as configurações dos comandos.
 
-## Observação
+## WhatsApp no Android
 
-A URL exata da Graph API é configurada por WHATSAPP_API_URL para não fixar uma versão da API no código. Preencha essa variável com o endpoint oficial da sua conta Meta.
+Para o bot funcionar, o usuário precisa conceder ao XCORE o acesso às notificações em **Configurações do Android → Acesso a notificações**.
+
+O XCORE observa as notificações do WhatsApp Business (`com.whatsapp.w4b`) e também do WhatsApp comum (`com.whatsapp`). Quando uma notificação contém uma ação de resposta, o XCORE pode usar essa ação para enviar a resposta sem usar a Cloud API da Meta.
