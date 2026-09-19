@@ -17,6 +17,7 @@ import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import com.xcore.app.support.SupportGroup;
 import com.xcore.app.support.SupportGroupScheduler;
+import com.xcore.app.support.SupportWhatsAppAccessibilityService;
 import com.xcore.app.support.SupportGroupStore;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -755,6 +756,23 @@ private void automation() {
         LinearLayout info = box();
         info.addView(label("Avisos automáticos", 17));
         info.addView(muted("Cada grupo possui seu próprio destino, mensagem, intervalo e estado. O agendamento não depende do listener de notificações."));
+        Button accessibility = new Button(this);
+        accessibility.setText(SupportWhatsAppAccessibilityService.isRunning()
+                ? "✓  Automação do WhatsApp ativa"
+                : "Ativar automação do WhatsApp");
+        accessibility.setTextColor(Color.WHITE);
+        accessibility.setAllCaps(false);
+        accessibility.setTypeface(null, 1);
+        accessibility.setBackground(background(
+                SupportWhatsAppAccessibilityService.isRunning() ? Color.rgb(34,92,69) : accent, 15));
+        LinearLayout.LayoutParams accp = new LinearLayout.LayoutParams(-1, dp(48));
+        accp.setMargins(0, dp(10), 0, 0);
+        accessibility.setLayoutParams(accp);
+        accessibility.setOnClickListener(v -> {
+            try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
+            catch (Exception ignored) { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
+        });
+        info.addView(accessibility);
         content.addView(info);
 
         Button add = new Button(this);
