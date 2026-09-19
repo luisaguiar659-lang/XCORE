@@ -99,8 +99,10 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
     }
 
     private WhatsAppResult executeTrigger(String phone, WhatsAppMessage message, WhatsAppTrigger trigger) {
-        if (trigger.getFlowId().isEmpty()) {
-            return WhatsAppResult.error("Comando sem fluxo configurado: " + trigger.getName());
+        // Um comando pode ser apenas uma resposta automática. Nesse caso
+        // não existe flowId e isso não deve impedir o envio da resposta.
+        if (trigger.getFlowId().isEmpty() && trigger.getResponse().trim().isEmpty()) {
+            return WhatsAppResult.error("Comando sem ação configurada: " + trigger.getName());
         }
 
         if (conversationStore != null) {
