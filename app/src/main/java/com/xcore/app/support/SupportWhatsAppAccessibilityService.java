@@ -18,12 +18,9 @@ public class SupportWhatsAppAccessibilityService extends AccessibilityService {
 
     public static boolean isRunning() { return instance != null; }
 
-    public static void send(ContextHolder holder, SupportGroup group) {
-        if (instance != null) {
-            instance.begin(group);
-        } else {
-            Toast.makeText(holder.context, "Ative o Acesso de acessibilidade do XCORE.", Toast.LENGTH_LONG).show();
-        }
+    public static void send(android.content.Context context, SupportGroup group) {
+        if (instance != null) instance.begin(group);
+        else Toast.makeText(context, "Ative o Acesso de acessibilidade do XCORE.", Toast.LENGTH_LONG).show();
     }
 
     @Override protected void onServiceConnected() { super.onServiceConnected(); instance = this; }
@@ -86,12 +83,7 @@ public class SupportWhatsAppAccessibilityService extends AccessibilityService {
     private AccessibilityNodeInfo findByHint(AccessibilityNodeInfo r,String... values){ if(r==null)return null; CharSequence t=r.getHintText(); if(t!=null)for(String v:values)if(t.toString().equalsIgnoreCase(v))return r; for(int i=0;i<r.getChildCount();i++){AccessibilityNodeInfo n=findByHint(r.getChild(i),values);if(n!=null)return n;} return null; }
     private AccessibilityNodeInfo findByIdSuffix(AccessibilityNodeInfo r,String suffix){ if(r==null)return null; String id=r.getViewIdResourceName(); if(id!=null&&id.endsWith(suffix))return r; for(int i=0;i<r.getChildCount();i++){AccessibilityNodeInfo n=findByIdSuffix(r.getChild(i),suffix);if(n!=null)return n;} return null; }
     private boolean setText(AccessibilityNodeInfo n,String value){ if(n==null)return false; if(n.isEditable()){ android.os.Bundle b=new android.os.Bundle(); b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,value); return n.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,b); } return false; }
-    private boolean setText(AccessibilityNodeInfo r,String value){ AccessibilityNodeInfo n=findEditable(r); return setText(n,value); }
     private AccessibilityNodeInfo findEditable(AccessibilityNodeInfo r){ if(r==null)return null; if(r.isEditable())return r; for(int i=0;i<r.getChildCount();i++){AccessibilityNodeInfo n=findEditable(r.getChild(i));if(n!=null)return n;} return null; }
     private boolean click(AccessibilityNodeInfo n){ return n!=null&&(n.isClickable()?n.performAction(AccessibilityNodeInfo.ACTION_CLICK):n.getParent()!=null&&click(n.getParent())); }
 
-    public static final class ContextHolder {
-        final android.content.Context context;
-        public ContextHolder(android.content.Context c){context=c;}
-    }
 }
