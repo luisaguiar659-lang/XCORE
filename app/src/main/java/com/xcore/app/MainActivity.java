@@ -2,6 +2,9 @@ package com.xcore.app;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Intent;
+import android.provider.Settings;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -300,11 +303,97 @@ public class MainActivity extends Activity {
         dashboard();
     }
 
+    private boolean isNotificationAccessGranted() {
+        String enabled = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
+        if (enabled == null) return false;
+        ComponentName component = new ComponentName(this, com.xcore.app.engine.whatsapp.WhatsAppNotificationListenerService.class);
+        for (String value : enabled.split(":")) {
+            try {
+                if (component.equals(ComponentName.unflattenFromString(value))) return true;
+            } catch (Exception ignored) {
+            }
+        }
+        return false;
+    }
+
+    private void openNotificationAccessSettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+        } catch (Exception error) {
+            startActivity(new Intent(Settings.ACTION_SETTINGS));
+        }
+    }
+
+    private void addNotificationAccessCard() {
+        boolean granted = isNotificationAccessGranted();
+        LinearLayout card = box();
+
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView icon = label(granted ? "✓" : "!", 22);
+        icon.setGravity(Gravity.CENTER);
+        icon.setTextColor(Color.WHITE);
+        icon.setBackground(background(granted ? success : warning, 14));
+        row.addView(icon, new LinearLayout.LayoutParams(dp(46), dp(46)));
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(12), 0, dp(8), 0);
+
+        TextView title = label("Acesso às notificações", 16);
+        title.setTypeface(null, 1);
+        info.addView(title);
+
+        TextView detail = muted(granted
+                ? "Ativo • o XCORE pode receber mensagens do WhatsApp pelas notificações."
+                : "Necessário para o XCORE capturar mensagens do WhatsApp Business.");
+        info.addView(detail);
+
+        row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        card.addView(row);
+
+        Button access = new Button(this);
+        access.setText(granted ? "✓  Acesso concedido" : "Conceder acesso");
+        access.setTextColor(Color.WHITE);
+        access.setTextSize(13);
+        access.setAllCaps(false);
+        access.setTypeface(null, 1);
+        access.setEnabled(!granted);
+        access.setBackground(background(granted ? Color.rgb(34, 92, 69) : accent, 15));
+        LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, dp(48));
+        ap.setMargins(0, dp(12), 0, 0);
+        access.setLayoutParams(ap);
+        access.setOnClickListener(v -> openNotificationAccessSettings());
+        card.addView(access);
+
+        content.addView(card);
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (content != null && status != null) {
+            boolean granted = isNotificationAccessGranted();
+            status.setText(granted
+                    ? "●  Acesso às notificações ativo"
+                    : "●  Conceda acesso às notificações para receber mensagens");
+            status.setTextColor(granted ? success : warning);
+            if (dashboardTab != null && dashboardTab.getBackground() != null) {
+                // Atualiza o aviso quando o usuário volta das Configurações do Android.
+                if (dashboardTab.getText().toString().equals("Dashboard")) {
+                    dashboard();
+                }
+            }
+        }
+    }
+
     private void dashboard() {
         setActive(dashboardTab);
         content.removeAllViews();
 
         content.addView(sectionTitle("Dashboard", "Visão geral das integrações e operações."));
+
+        addNotificationAccessCard();
 
         statsRow = new LinearLayout(this);
         statsRow.setOrientation(LinearLayout.HORIZONTAL);
