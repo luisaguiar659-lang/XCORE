@@ -24,7 +24,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         transport = new WhatsAppNotificationTransport(this);
         engine = new WhatsAppTriggerEngine(
                 store,
-                new LocalWhatsAppFlowRouter(transport),
+                new LocalWhatsAppFlowRouter(this, transport),
                 new AndroidWhatsAppConversationStore(getApplicationContext()),
                 transport
         );
@@ -116,9 +116,11 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
     }
 
     private static final class LocalWhatsAppFlowRouter implements WhatsAppFlowRouter {
+        private final WhatsAppNotificationListenerService service;
         private final WhatsAppNotificationTransport transport;
 
-        LocalWhatsAppFlowRouter(WhatsAppNotificationTransport transport) {
+        LocalWhatsAppFlowRouter(WhatsAppNotificationListenerService service, WhatsAppNotificationTransport transport) {
+            this.service = service;
             this.transport = transport;
         }
 
@@ -128,13 +130,13 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
                 MasterflixWebAutomation.request(phone, "MASTERFLIX TESTE COMPLETO 1H", transport);
                 try {
                     android.content.Intent intent = new android.content.Intent(
-                            WhatsAppNotificationListenerService.this,
+                            service,
                             MasterflixActivity.class);
                     intent.putExtra(MasterflixActivity.EXTRA_AUTO_TEST, true);
                     intent.putExtra(MasterflixActivity.EXTRA_TEST_LABEL, "MASTERFLIX TESTE COMPLETO 1H");
                     intent.putExtra(MasterflixActivity.EXTRA_PHONE, phone);
                     intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
+                    service.startActivity(intent);
                     return WhatsAppResult.success("Masterflix aberto para gerar o teste", null);
                 } catch (Exception error) {
                     MasterflixWebAutomation.finishRequest();
