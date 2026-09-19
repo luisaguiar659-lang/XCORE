@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">XCORE</string>
+    <string name="masterflix_accessibility_description">Automação do XCORE para gerar testes no Masterflix pelo navegador.</string>
 </resources>
