@@ -36,6 +36,7 @@ public class SupportMotorService extends Service {
     private static final long LOOP_MS = 1000L;
     private final Handler handler = new Handler();
     private final Map<String, Long> nextRun = new HashMap<>();
+    private String triggerGroupName = "";
     private final Runnable loop = new Runnable() {
         @Override public void run() {
             tick();
@@ -63,8 +64,19 @@ public class SupportMotorService extends Service {
         if (nextRun.isEmpty()) {
             long now = SystemClock.elapsedRealtime();
             String triggerGroup = intent == null ? "" : intent.getStringExtra(EXTRA_TRIGGER_GROUP);
+            triggerGroupName = triggerGroup == null ? "" : triggerGroup.trim();
             for (SupportGroup g : new SupportGroupStore(this).list()) {
-                if (g.isActive()) nextRun.put(g.getId(), now + intervalMs(g));
+                if (!g.isActive()) continue;
+                if (!triggerGroupName.isEmpty() && !g.getGroupName().equalsIgnoreCase(triggerGroupName)) continue;
+                nextRun.put(g.getId(), now + intervalMs(g));
+            }
+            if (!triggerGroupName.isEmpty()) {
+                for (SupportGroup g : new SupportGroupStore(this).list()) {
+                    if (g.isActive() && g.getGroupName().equalsIgnoreCase(triggerGroupName)) {
+                        SupportNoticeLauncher.openGroup(this, g);
+                        break;
+                    }
+                }
             }
             if (!triggerGroup.isEmpty()) {
                 SupportMotorNotification.ensureChannel(this);
@@ -84,7 +96,7 @@ public class SupportMotorService extends Service {
         long now = SystemClock.elapsedRealtime();
         List<SupportGroup> groups = new SupportGroupStore(this).list();
         for (SupportGroup g : groups) {
-            if (!g.isActive()) {
+            if (!g.isActive() || (!triggerGroupName.isEmpty() && !g.getGroupName().equalsIgnoreCase(triggerGroupName))) {
                 nextRun.remove(g.getId());
                 continue;
             }
@@ -132,6 +144,7 @@ public class SupportMotorService extends Service {
         if (instance == this) instance = null;
         handler.removeCallbacksAndMessages(null);
         nextRun.clear();
+        triggerGroupName = "";
         SupportMotorNotification.showStopped(this);
         super.onDestroy();
     }
