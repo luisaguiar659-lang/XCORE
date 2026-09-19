@@ -15,11 +15,17 @@ public class SupportWhatsAppAccessibilityService extends AccessibilityService {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private SupportGroup pending;
     private int step = 0;
+    private boolean sendMessage = true;
 
     public static boolean isRunning() { return instance != null; }
 
+    public static void openGroup(android.content.Context context, SupportGroup group) {
+        if (instance != null) instance.begin(group, false);
+        else Toast.makeText(context, "Ative o Acesso de acessibilidade do XCORE.", Toast.LENGTH_LONG).show();
+    }
+
     public static void send(android.content.Context context, SupportGroup group) {
-        if (instance != null) instance.begin(group);
+        if (instance != null) instance.begin(group, true);
         else Toast.makeText(context, "Ative o Acesso de acessibilidade do XCORE.", Toast.LENGTH_LONG).show();
     }
 
@@ -31,8 +37,9 @@ public class SupportWhatsAppAccessibilityService extends AccessibilityService {
     @Override public void onInterrupt() { pending = null; step = 0; }
     @Override public void onDestroy() { if (instance == this) instance = null; handler.removeCallbacksAndMessages(null); super.onDestroy(); }
 
-    private void begin(SupportGroup group) {
+    private void begin(SupportGroup group, boolean shouldSend) {
         pending = group;
+        sendMessage = shouldSend;
         step = 0;
         Intent launch = getPackageManager().getLaunchIntentForPackage("com.whatsapp.w4b");
         if (launch == null) launch = getPackageManager().getLaunchIntentForPackage("com.whatsapp");
@@ -61,6 +68,7 @@ public class SupportWhatsAppAccessibilityService extends AccessibilityService {
             AccessibilityNodeInfo group = findByText(root, pending.getGroupName());
             if (group != null && click(group)) { step = 3; retryLater(); return; }
         } else if (step == 3) {
+            if (!sendMessage) { pending = null; step = 0; return; }
             AccessibilityNodeInfo input = findByHint(root, "Digite uma mensagem", "Type a message");
             if (input == null) input = findByIdSuffix(root, "entry");
             if (input != null && setText(input, pending.getMessage())) { step = 4; retryLater(); return; }
