@@ -1,5 +1,7 @@
 package com.xcore.app.engine.masterflix;
 
+import android.graphics.Rect;
+import android.view.MotionEvent;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.xcore.app.engine.whatsapp.WhatsAppNotificationTransport;
@@ -20,28 +22,22 @@ public final class MasterflixWebAutomation {
         running = true;
     }
 
-    public static boolean hasRequest() {
-        return running;
-    }
+    public static boolean hasRequest() { return running; }
 
     public static void start(WebView webView, String label, String phone) {
-        if (!running && (label == null || label.trim().isEmpty())) return;
+        if (!running) request(phone, label, transport);
         if (label != null && !label.trim().isEmpty()) pendingLabel = label;
         if (phone != null && !phone.trim().isEmpty()) pendingPhone = phone;
-        running = true;
 
         webView.addJavascriptInterface(new Bridge(webView), "XCORE");
 
         final String wanted = pendingLabel == null || pendingLabel.trim().isEmpty()
-                ? "MASTERFLIX TESTE COMPLETO 1H"
-                : pendingLabel.trim();
+                ? "MASTERFLIX TESTE COMPLETO 1H" : pendingLabel.trim();
 
-        // Fluxo reproduzido do vídeo:
-        // 1) Dashboard / Teste Rápido
-        // 2) tocar no produto exato
-        // 3) aguardar "Detalhes do Cliente"
-        // 4) copiar o conteúdo e fechar a janela
-        // 5) devolver o mesmo conteúdo ao cliente no WhatsApp.
+        // Reprodução do vídeo: aguarda o Dashboard/Teste Rápido aparecer,
+        // localiza o primeiro produto MASTERFLIX TESTE COMPLETO 1H e prepara
+        // um toque físico no centro do item, em vez de depender apenas de
+        // HTMLElement.click(), que alguns frameworks ignoram.
         String js = "(function(){"
                 + "if(window.__xcoreMasterflixStarted)return;"
                 + "window.__xcoreMasterflixStarted=true;"
@@ -49,21 +45,17 @@ public final class MasterflixWebAutomation {
                 + "var tries=0;"
                 + "window.__xcoreMasterflixTimer=setInterval(function(){"
                 + "tries++;"
-                + "var all=[].slice.call(document.querySelectorAll('button,a,[role=button],div,span'));"
-                + "var target=all.find(function(e){"
+                + "var els=[].slice.call(document.querySelectorAll('button,a,[role=button],div,span'));"
+                + "var target=els.find(function(e){"
                 + "var t=(e.innerText||e.textContent||'').trim();"
                 + "return t.toLowerCase()===wanted.toLowerCase();"
                 + "});"
                 + "if(target){"
                 + "clearInterval(window.__xcoreMasterflixTimer);"
-                + "var clickable=target.closest('button,a,[role=button]')||target;"
-                + "clickable.scrollIntoView({block:'center',behavior:'instant'});"
-                + "setTimeout(function(){"
-                + "clickable.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));"
-                + "setTimeout(function(){window.XCORE.waitDetails();},900);"
-                + "},250);"
+                + "var r=target.getBoundingClientRect();"
+                + "window.XCORE.tap((r.left+r.right)/2,(r.top+r.bottom)/2);"
                 + "}"
-                + "if(tries>45){clearInterval(window.__xcoreMasterflixTimer);window.XCORE.error('Não encontrei o teste '+wanted+'.');}"
+                + "if(tries>90){clearInterval(window.__xcoreMasterflixTimer);window.XCORE.error('Não encontrei o teste '+wanted+'.');}"
                 + "},500);"
                 + "})();";
 
@@ -71,16 +63,26 @@ public final class MasterflixWebAutomation {
     }
 
     private static String quote(String value) {
-        return "'" + value.replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\n", " ") + "'";
+        return "'" + value.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ") + "'";
     }
 
     private static final class Bridge {
         private final WebView webView;
+        Bridge(WebView webView) { this.webView = webView; }
 
-        Bridge(WebView webView) {
-            this.webView = webView;
+        @JavascriptInterface
+        public void tap(float x, float y) {
+            webView.post(() -> {
+                float density = webView.getResources().getDisplayMetrics().density;
+                float px = x * density;
+                float py = y * density;
+
+                long now = System.currentTimeMillis();
+                webView.dispatchTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, px, py, 0));
+                webView.dispatchTouchEvent(MotionEvent.obtain(now, now + 60, MotionEvent.ACTION_UP, px, py, 0));
+
+                webView.postDelayed(this::waitDetails, 900);
+            });
         }
 
         @JavascriptInterface
@@ -88,19 +90,10 @@ public final class MasterflixWebAutomation {
             webView.postDelayed(() -> {
                 String js = "(function(){"
                         + "var body=document.body?document.body.innerText:'';"
-                        + "var title=(document.body&&document.body.innerText||'');"
-                        + "var details=/Detalhes do Cliente/i.test(title);"
-                        + "var hasCredentials=/Usu[aá]rio:/i.test(title)&&/Senha:/i.test(title);"
-                        + "var buttons=[].slice.call(document.querySelectorAll('button,a,[role=button]'));"
-                        + "var closeCopy=buttons.find(function(e){return /Copiar\\s*e\\s*Fechar/i.test((e.innerText||e.textContent||''));});"
-                        + "if(details&&hasCredentials){"
-                        + "var result=JSON.stringify({ok:true,body:body});"
-                        + "if(closeCopy){setTimeout(function(){closeCopy.click();},150);}"
-                        + "return result;"
-                        + "}"
-                        + "return JSON.stringify({ok:false,body:body});"
+                        + "var details=/Detalhes do Cliente/i.test(body);"
+                        + "var hasCredentials=/Usu[aá]rio:/i.test(body)&&/Senha:/i.test(body);"
+                        + "return JSON.stringify({ok:details&&hasCredentials,body:body});"
                         + "})()";
-
                 webView.evaluateJavascript(js, value -> {
                     String result = decode(value);
                     if (result.startsWith("{")) {
@@ -110,15 +103,13 @@ public final class MasterflixWebAutomation {
                             return;
                         }
                     }
-                    webView.postDelayed(this::waitDetails, 800);
+                    waitDetails();
                 });
-            }, 500);
+            }, 700);
         }
 
         @JavascriptInterface
-        public void error(String error) {
-            MasterflixWebAutomation.fail(error);
-        }
+        public void error(String error) { fail(error); }
 
         private boolean containsCredentials(String body) {
             String v = body.toLowerCase(Locale.ROOT);
@@ -141,11 +132,8 @@ public final class MasterflixWebAutomation {
         private String decode(String value) {
             if (value == null) return "";
             String v = value.trim();
-            if (v.startsWith("\"") && v.endsWith("\"")) {
-                v = v.substring(1, v.length() - 1);
-            }
-            return v.replace("\\\"", "\"")
-                    .replace("\\\\", "\\");
+            if (v.startsWith("\"") && v.endsWith("\"")) v = v.substring(1, v.length() - 1);
+            return v.replace("\\\"", "\"").replace("\\\\", "\\");
         }
     }
 
