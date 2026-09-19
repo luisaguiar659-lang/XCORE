@@ -800,6 +800,7 @@ private void automation() {
         info.addView(motor);
 
         info.addView(muted("O XCORE também mantém uma notificação persistente do motor. Nela você pode ativar ou pausar o motor sem abrir o aplicativo."));
+        content.addView(info);
 
         Button accessibility = new Button(this);
         accessibility.setText(SupportWhatsAppAccessibilityService.isRunning()
