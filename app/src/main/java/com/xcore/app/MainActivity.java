@@ -19,6 +19,7 @@ import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import com.xcore.app.support.SupportGroup;
 import com.xcore.app.support.SupportWhatsAppAccessibilityService;
 import com.xcore.app.support.SupportMotorNotification;
+import com.xcore.app.support.SupportMotorService;
 import com.xcore.app.support.SupportGroupStore;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
