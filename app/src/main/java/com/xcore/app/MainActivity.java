@@ -5,8 +5,6 @@ import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
-import android.accessibilityservice.AccessibilityServiceInfo;
-import android.view.accessibility.AccessibilityManager;
 import com.xcore.app.engine.masterflix.MasterflixAutomationAccessibilityService;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -412,7 +410,7 @@ public class MainActivity extends Activity {
 private void automation() {
         setActive(automationTab);
         content.removeAllViews();
-        content.addView(sectionTitle("Automação", "Fluxo planejado para o provisionamento."));
+        content.addView(sectionTitle("Automação", "Fluxo real do teste Masterflix pelo navegador."));
 
         LinearLayout triggerBox = box();
         TextView th = label("Comandos WhatsApp", 18);
@@ -434,11 +432,11 @@ private void automation() {
 
         String[][] steps = {
             {"01", "Receber mensagem", "WhatsApp Business"},
-            {"02", "Criar teste", "Masterflix"},
-            {"03", "Ativar MEC e obter M3U", "Masterflix"},
-            {"04", "Enviar M3U + MEC", "Master XCloud"},
-            {"05", "Enviar M3U + MEC", "Master IBO"},
-            {"06", "Responder cliente", "WhatsApp Business"}
+            {"02", "Cliente escolhe Teste", "Gatilho configurado"},
+            {"03", "Abrir Masterflix", "Chrome"},
+            {"04", "Selecionar o teste", "Masterflix"},
+            {"05", "Copiar os dados gerados", "Masterflix"},
+            {"06", "Enviar o teste", "WhatsApp Business"}
         };
 
         for (int i = 0; i < steps.length; i++) {
