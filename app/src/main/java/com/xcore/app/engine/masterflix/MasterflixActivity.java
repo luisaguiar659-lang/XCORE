@@ -1,9 +1,10 @@
 package com.xcore.app.engine.masterflix;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
@@ -11,6 +12,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -22,25 +24,21 @@ public final class MasterflixActivity extends Activity {
     public static final String EXTRA_PHONE = "phone";
 
     private static final String URL = "https://masterflix.sigmab.pro/#/dashboard";
+    private static final String TESTE_1H = "MASTERFLIX TESTE COMPLETO 1H";
+
     private WebView webView;
     private ProgressBar progress;
-    private boolean autoTest;
-    private String testLabel;
-    private String phone;
+    private Button testButton;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        autoTest = getIntent().getBooleanExtra(EXTRA_AUTO_TEST, false);
-        testLabel = getIntent().getStringExtra(EXTRA_TEST_LABEL);
-        phone = getIntent().getStringExtra(EXTRA_PHONE);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(7, 11, 23));
 
         LinearLayout bar = new LinearLayout(this);
-        bar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(10, 8, 10, 8);
         bar.setBackgroundColor(Color.rgb(16, 24, 43));
 
@@ -57,7 +55,7 @@ public final class MasterflixActivity extends Activity {
         title.setTextColor(Color.WHITE);
         title.setTextSize(19);
         title.setTypeface(null, 1);
-        title.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        title.setGravity(Gravity.CENTER_VERTICAL);
         bar.addView(title, new LinearLayout.LayoutParams(0, 52, 1));
 
         Button reload = new Button(this);
@@ -74,7 +72,9 @@ public final class MasterflixActivity extends Activity {
         progress.setMax(100);
         root.addView(progress, new LinearLayout.LayoutParams(-1, 3));
 
+        FrameLayout content = new FrameLayout(this);
         webView = new WebView(this);
+
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -84,13 +84,13 @@ public final class MasterflixActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setLoadWithOverviewMode(false);
         s.setUseWideViewPort(false);
+
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE);
-                if (autoTest) MasterflixWebAutomation.start(view, testLabel, phone);
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -100,7 +100,27 @@ public final class MasterflixActivity extends Activity {
             }
         });
 
-        root.addView(webView, new LinearLayout.LayoutParams(-1, 0, 1));
+        content.addView(webView, new FrameLayout.LayoutParams(-1, -1));
+
+        testButton = new Button(this);
+        testButton.setText("🎬  GERAR TESTE 1 HORA");
+        testButton.setTextSize(16);
+        testButton.setTextColor(Color.WHITE);
+        testButton.setAllCaps(false);
+        testButton.setTypeface(null, 1);
+        testButton.setBackgroundColor(Color.rgb(25, 170, 100));
+        testButton.setOnClickListener(v -> {
+            testButton.setEnabled(false);
+            testButton.setText("Gerando teste...");
+            MasterflixWebAutomation.start(webView, TESTE_1H, null);
+        });
+
+        FrameLayout.LayoutParams buttonParams =
+                new FrameLayout.LayoutParams(-1, 58, Gravity.BOTTOM);
+        buttonParams.setMargins(18, 0, 18, 18);
+        content.addView(testButton, buttonParams);
+
+        root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
 
         webView.loadUrl(URL);
@@ -112,15 +132,21 @@ public final class MasterflixActivity extends Activity {
     }
 
     public void finishAutomation(String message, String error) {
+        testButton.setEnabled(true);
+        testButton.setText("🎬  GERAR TESTE 1 HORA");
+
         if (error != null) {
             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
             MasterflixWebAutomation.finishRequest();
             return;
         }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Teste gerado")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
+
         MasterflixWebAutomation.finishRequest();
-        if (phone != null && !phone.trim().isEmpty()) {
-            MasterflixWebAutomation.sendToWhatsApp(phone, message);
-            Toast.makeText(this, "Teste gerado e enviado pelo XCORE.", Toast.LENGTH_SHORT).show();
-        }
     }
 }
