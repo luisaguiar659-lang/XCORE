@@ -383,17 +383,22 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void dashboard() {
+        private void dashboard() {
         setActive(dashboardTab);
         content.removeAllViews();
 
         content.addView(sectionTitle("Dashboard", "Visão geral do XCORE."));
 
+        addIntegration(R.drawable.whatsapp_logo, "WhatsApp Business", "Canal de atendimento");
+        addIntegration(R.drawable.masterflix_logo, "Masterflix", "Criação de testes");
+        addIntegration(R.drawable.master_xcloud_logo, "Master XCloud", "Provisionamento");
+        addIntegration(R.drawable.master_ibo_logo, "Master IBO", "Gestão do cliente");
+
         Space bottomSpace = new Space(this);
         content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(82)));
     }
 
-    private void automation() {
+private void automation() {
         setActive(automationTab);
         content.removeAllViews();
         content.addView(sectionTitle("Automação", "Fluxo planejado para o provisionamento."));
