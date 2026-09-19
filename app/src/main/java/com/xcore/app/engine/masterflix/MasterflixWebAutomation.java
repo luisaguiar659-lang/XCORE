@@ -84,8 +84,8 @@ public final class MasterflixWebAutomation {
         private String decode(String value) {
             if (value == null) return "";
             String v = value;
-            if (v.startsWith(""") && v.endsWith(""")) v = v.substring(1, v.length()-1);
-            return v.replace("\n","\n").replace("\"", """).replace("\\","\\");
+            if (v.startsWith("\"") && v.endsWith("\"")) v = v.substring(1, v.length() - 1);
+            return v.replace("\\\"", "\"").replace("\\\\", "\\");
         }
     }
 
