@@ -4,6 +4,9 @@ import android.app.Notification;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.content.Intent;
+import com.xcore.app.engine.masterflix.MasterflixActivity;
+import com.xcore.app.engine.masterflix.MasterflixWebAutomation;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +25,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         transport = new WhatsAppNotificationTransport(this);
         engine = new WhatsAppTriggerEngine(
                 store,
-                new LocalWhatsAppFlowRouter(),
+                new LocalWhatsAppFlowRouter(this),
                 new AndroidWhatsAppConversationStore(getApplicationContext()),
                 transport
         );
@@ -108,7 +111,31 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
     }
 
     private static final class LocalWhatsAppFlowRouter implements WhatsAppFlowRouter {
+        private final WhatsAppNotificationListenerService service;
+
+        LocalWhatsAppFlowRouter(WhatsAppNotificationListenerService service) {
+            this.service = service;
+        }
+
         @Override public WhatsAppResult execute(String flowId, WhatsAppMessage message) {
+            if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
+                try {
+                    MasterflixWebAutomation.request(
+                            message.getPhone(),
+                            "MASTERFLIX TESTE COMPLETO 1H",
+                            service.transport
+                    );
+                    Intent intent = new Intent(service, MasterflixActivity.class);
+                    intent.putExtra(MasterflixActivity.EXTRA_AUTO_TEST, true);
+                    intent.putExtra(MasterflixActivity.EXTRA_TEST_LABEL, "MASTERFLIX TESTE COMPLETO 1H");
+                    intent.putExtra(MasterflixActivity.EXTRA_PHONE, message.getPhone());
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    service.startActivity(intent);
+                    return WhatsAppResult.success("Fluxo de teste Masterflix iniciado", null);
+                } catch (Exception e) {
+                    return WhatsAppResult.error("Não foi possível abrir o Masterflix: " + e.getMessage());
+                }
+            }
             return WhatsAppResult.success("Fluxo " + flowId + " recebido pela notificação", null);
         }
     }
