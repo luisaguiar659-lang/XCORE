@@ -393,8 +393,6 @@ public class MainActivity extends Activity {
 
         content.addView(sectionTitle("Dashboard", "Visão geral das integrações e operações."));
 
-        addNotificationAccessCard();
-
         statsRow = new LinearLayout(this);
         statsRow.setOrientation(LinearLayout.HORIZONTAL);
         addStat("04", "Integrações");
@@ -817,13 +815,54 @@ public class MainActivity extends Activity {
     private void settings() {
         setActive(settingsTab);
         content.removeAllViews();
-        content.addView(sectionTitle("Configurações", "Conecte o aplicativo ao backend do XCORE."));
+        content.addView(sectionTitle("Configurações", "Preferências gerais do aplicativo."));
+
+        LinearLayout general = box();
+        TextView h = label("XCORE", 17);
+        h.setTypeface(null, 1);
+        general.addView(h);
+        general.addView(muted("As configurações de WhatsApp, notificações e backend ficam dentro do módulo WhatsApp Business."));
+        content.addView(general);
+
+        LinearLayout security = box();
+        TextView sh = label("Segurança", 17);
+        sh.setTypeface(null, 1);
+        security.addView(sh);
+        security.addView(muted("O XCORE usa a chave do backend apenas para sincronizar comandos. O transporte das mensagens do WhatsApp é feito pelas notificações do Android."));
+        content.addView(security);
+
+        Space bottomSpace = new Space(this);
+        content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(60)));
+    }
+
+    private void whatsappSettings() {
+        setActive(dashboardTab);
+        content.removeAllViews();
+
+        LinearLayout heading = new LinearLayout(this);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+        TextView back = label("‹", 32);
+        back.setTextColor(text);
+        back.setGravity(Gravity.CENTER);
+        back.setOnClickListener(v -> dashboard());
+        heading.addView(back, new LinearLayout.LayoutParams(dp(42), dp(48)));
+
+        LinearLayout titles = new LinearLayout(this);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        TextView h = label("WhatsApp Business", 23);
+        h.setTypeface(null, 1);
+        titles.addView(h);
+        titles.addView(muted("Configure o acesso às notificações e a sincronização dos comandos."));
+        heading.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
+        content.addView(heading);
+
+        addNotificationAccessCard();
 
         LinearLayout backend = box();
         TextView bh = label("Backend XCORE", 17);
         bh.setTypeface(null, 1);
         backend.addView(bh);
-        backend.addView(muted("O app sincroniza os comandos com o servidor. Use HTTPS em produção."));
+        backend.addView(muted("Usado somente para sincronizar os comandos do WhatsApp. As mensagens não passam pelo backend."));
 
         EditText url = new EditText(this);
         url.setHint("URL do backend (ex.: https://seu-servidor)");
@@ -865,15 +904,29 @@ public class MainActivity extends Activity {
 
         content.addView(backend);
 
+        LinearLayout commands = box();
+        TextView ch = label("Comandos e gatilhos", 17);
+        ch.setTypeface(null, 1);
+        commands.addView(ch);
+        commands.addView(muted("Configure as palavras que iniciam o atendimento e as respostas automáticas."));
+        Button manage = smallAction("Gerenciar comandos");
+        manage.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
+        manage.setOnClickListener(v -> whatsappTriggers());
+        commands.addView(manage);
+        content.addView(commands);
+
         LinearLayout security = box();
-        TextView sh = label("Segurança", 17);
+        TextView sh = label("Status do módulo", 17);
         sh.setTypeface(null, 1);
         security.addView(sh);
-        security.addView(muted("A chave usada pelo app é somente a chave do backend. O token permanente do WhatsApp fica no servidor."));
-        security.addView(chip(backendConfig.isConfigured() ? "BACKEND CONFIGURADO" : "BACKEND NÃO CONFIGURADO",
-                backendConfig.isConfigured() ? success : warning,
-                backendConfig.isConfigured() ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
+        security.addView(chip(
+                isNotificationAccessGranted() ? "WHATSAPP PRONTO" : "AGUARDANDO ACESSO ÀS NOTIFICAÇÕES",
+                isNotificationAccessGranted() ? success : warning,
+                isNotificationAccessGranted() ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
         content.addView(security);
+
+        Space bottomSpace = new Space(this);
+        content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(60)));
     }
 
     private void testBackendConnection() {
@@ -991,6 +1044,10 @@ public class MainActivity extends Activity {
     }
 
     private void showIntegration(String name) {
+        if ("WhatsApp Business".equals(name)) {
+            whatsappSettings();
+            return;
+        }
         Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
     }
 }
