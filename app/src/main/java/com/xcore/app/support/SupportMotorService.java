@@ -47,20 +47,26 @@ public class SupportMotorService extends Service {
     @Override public void onCreate() {
         super.onCreate();
         instance = this;
-        SupportMotorNotification.ensureChannel(this);
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(SupportMotorNotification.NOTIFICATION_ID,
-                    SupportMotorNotification.build(this, true, "Motor ativo • preparando os grupos",
-                            SupportMotorNotification.ACTION_PAUSE, "PAUSAR MOTOR"),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-        } else {
-            startForeground(SupportMotorNotification.NOTIFICATION_ID,
-                    SupportMotorNotification.build(this, true, "Motor ativo • preparando os grupos",
-                            SupportMotorNotification.ACTION_PAUSE, "PAUSAR MOTOR"));
+        try {
+            SupportMotorNotification.ensureChannel(this);
+            android.app.Notification notification = SupportMotorNotification.build(this, true,
+                    "Motor ativo • preparando os grupos",
+                    SupportMotorNotification.ACTION_PAUSE, "PAUSAR MOTOR");
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(SupportMotorNotification.NOTIFICATION_ID, notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(SupportMotorNotification.NOTIFICATION_ID, notification);
+            }
+        } catch (Throwable error) {
+            instance = null;
+            stopSelf();
+            SupportMotorNotification.showStopped(this);
         }
     }
 
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
+        if (instance != this) return START_NOT_STICKY;
         if (nextRun.isEmpty()) {
             long now = SystemClock.elapsedRealtime();
             String triggerGroup = intent == null ? "" : intent.getStringExtra(EXTRA_TRIGGER_GROUP);
