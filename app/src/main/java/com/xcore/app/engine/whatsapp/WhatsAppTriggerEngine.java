@@ -1,23 +1,24 @@
 package com.xcore.app.engine.whatsapp;
 
 /**
- * Motor responsável exclusivamente por receber mensagens, encontrar gatilhos
- * ativos e encaminhar o fluxo correspondente.
+ * Motor responsável por receber mensagens, encontrar gatilhos ativos
+ * e encaminhar o fluxo correspondente.
  */
 public final class WhatsAppTriggerEngine implements WhatsAppEngine {
 
-    private final WhatsAppTriggerStore triggerStore;
+    private final WhatsAppTriggerRepository triggerRepository;
     private final WhatsAppFlowRouter flowRouter;
     private boolean running;
 
-    public WhatsAppTriggerEngine(WhatsAppTriggerStore triggerStore, WhatsAppFlowRouter flowRouter) {
-        if (triggerStore == null) {
-            throw new IllegalArgumentException("triggerStore não pode ser nulo");
+    public WhatsAppTriggerEngine(WhatsAppTriggerRepository triggerRepository,
+                                 WhatsAppFlowRouter flowRouter) {
+        if (triggerRepository == null) {
+            throw new IllegalArgumentException("triggerRepository não pode ser nulo");
         }
         if (flowRouter == null) {
             throw new IllegalArgumentException("flowRouter não pode ser nulo");
         }
-        this.triggerStore = triggerStore;
+        this.triggerRepository = triggerRepository;
         this.flowRouter = flowRouter;
     }
 
@@ -50,9 +51,9 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
             return WhatsAppResult.error("Mensagem sem número de telefone");
         }
 
-        WhatsAppTrigger trigger = triggerStore.findMatch(message.getText());
+        WhatsAppTrigger trigger = triggerRepository.findMatch(message.getText());
 
-        // Nenhum gatilho: não responde e não executa nenhum módulo.
+        // Sem gatilho correspondente: nenhuma resposta e nenhum módulo é executado.
         if (trigger == null) {
             return WhatsAppResult.success("Nenhum gatilho correspondente", null);
         }
@@ -67,7 +68,7 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
     @Override
     public WhatsAppResult sendText(String phone, String text) {
         return WhatsAppResult.error(
-                "Envio WhatsApp ainda depende do conector oficial do WhatsApp Business"
+                "Envio WhatsApp depende do conector oficial do WhatsApp Business"
         );
     }
 }
