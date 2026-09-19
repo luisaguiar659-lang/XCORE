@@ -17,7 +17,6 @@ import com.xcore.app.engine.whatsapp.WhatsAppBackendConfig;
 import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import com.xcore.app.support.SupportGroup;
-import com.xcore.app.support.SupportGroupScheduler;
 import com.xcore.app.support.SupportWhatsAppAccessibilityService;
 import com.xcore.app.support.SupportMotorNotification;
 import com.xcore.app.support.SupportGroupStore;
@@ -765,7 +764,7 @@ private void automation() {
 
         LinearLayout info = box();
         info.addView(label("Avisos automáticos", 17));
-        info.addView(muted("Cada grupo possui seu próprio destino, mensagem, intervalo e estado. O agendamento não depende do listener de notificações."));
+        info.addView(muted("Cada grupo possui seu próprio destino, mensagem e intervalo. O Motor de Suporte executa os envios quando estiver ativo."));
         Button accessibility = new Button(this);
         accessibility.setText(SupportWhatsAppAccessibilityService.isRunning()
                 ? "✓  Automação do WhatsApp ativa"
@@ -843,7 +842,6 @@ private void automation() {
             SupportGroup updated = new SupportGroup(group.getId(), group.getGroupName(), group.getMessage(),
                     group.getInterval(), group.getUnit(), !group.isActive());
             supportGroupStore.save(updated);
-            SupportGroupScheduler.schedule(this, updated);
             supportGroups();
         });
         actions.addView(toggle);
@@ -851,7 +849,6 @@ private void automation() {
         del.setTextColor(Color.rgb(255,110,120));
         del.setOnClickListener(v -> {
             supportGroupStore.remove(group.getId());
-            SupportGroupScheduler.cancel(this, group.getId());
             supportGroups();
         });
         actions.addView(del);
@@ -939,7 +936,6 @@ private void automation() {
                     existing == null ? java.util.UUID.randomUUID().toString() : existing.getId(),
                     gn, msg, value, selected, active.isChecked());
             supportGroupStore.save(saved);
-            SupportGroupScheduler.schedule(this, saved);
             status.setText("●  Grupo de suporte salvo");
             status.setTextColor(success);
             dialog.dismiss();
