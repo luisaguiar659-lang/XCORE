@@ -738,6 +738,22 @@ private void automation() {
     }
 
     
+    private void startSupportMotor() {
+        Intent service = new Intent(this, com.xcore.app.support.SupportMotorService.class)
+                .setAction(com.xcore.app.support.SupportMotorService.ACTION_START);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service);
+        else startService(service);
+        Toast.makeText(this, "Motor de Suporte ativado.", Toast.LENGTH_SHORT).show();
+        supportGroups();
+    }
+
+    private void pauseSupportMotor() {
+        stopService(new Intent(this, com.xcore.app.support.SupportMotorService.class));
+        SupportMotorNotification.showStopped(this);
+        Toast.makeText(this, "Motor de Suporte pausado.", Toast.LENGTH_SHORT).show();
+        supportGroups();
+    }
+
     private void supportGroups() {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7001);
@@ -763,8 +779,28 @@ private void automation() {
         content.addView(heading);
 
         LinearLayout info = box();
-        info.addView(label("Avisos automáticos", 17));
-        info.addView(muted("Cada grupo possui seu próprio destino, mensagem e intervalo. O Motor de Suporte executa os envios quando estiver ativo."));
+        info.addView(label("Motor de Suporte", 17));
+        boolean motorRunning = SupportMotorService.isRunning();
+        TextView motorStatus = muted(motorRunning
+                ? "●  MOTOR ATIVO — executando os grupos configurados."
+                : "●  MOTOR PARADO — ative para iniciar os envios automáticos.");
+        motorStatus.setTextColor(motorRunning ? success : warning);
+        info.addView(motorStatus);
+
+        Button motor = new Button(this);
+        motor.setText(motorRunning ? "⏸  Pausar motor" : "▶  Ativar motor");
+        motor.setTextColor(Color.WHITE);
+        motor.setAllCaps(false);
+        motor.setTypeface(null, 1);
+        motor.setBackground(background(motorRunning ? Color.rgb(62,48,27) : Color.rgb(34,92,69), 15));
+        LinearLayout.LayoutParams motorp = new LinearLayout.LayoutParams(-1, dp(48));
+        motorp.setMargins(0, dp(10), 0, 0);
+        motor.setLayoutParams(motorp);
+        motor.setOnClickListener(v -> { if (SupportMotorService.isRunning()) pauseSupportMotor(); else startSupportMotor(); });
+        info.addView(motor);
+
+        info.addView(muted("O XCORE também mantém uma notificação persistente do motor. Nela você pode ativar ou pausar o motor sem abrir o aplicativo."));
+
         Button accessibility = new Button(this);
         accessibility.setText(SupportWhatsAppAccessibilityService.isRunning()
                 ? "✓  Automação do WhatsApp ativa"
@@ -781,8 +817,11 @@ private void automation() {
             try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
             catch (Exception ignored) { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
         });
-        info.addView(accessibility);
-        content.addView(info);
+        LinearLayout accessInfo = box();
+        accessInfo.addView(label("Automação do WhatsApp", 17));
+        accessInfo.addView(muted("Necessária para o motor conseguir navegar até o grupo e enviar a mensagem automaticamente."));
+        accessInfo.addView(accessibility);
+        content.addView(accessInfo);
 
         Button add = new Button(this);
         add.setText("+  Adicionar grupo");
