@@ -81,3 +81,5 @@ jobs:
         with:
           name: XCORE-Android-Debug
           path: app/build/outputs/apk/debug/*.apk
+
+# Build trigger for XCORE 0.4.0 updated APK
