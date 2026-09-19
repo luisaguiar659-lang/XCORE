@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      XCORE_HAS_SIGNING_KEY: ${{ secrets.XCORE_KEYSTORE_BASE64 != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,14 +38,14 @@ jobs:
           gradle-version: '8.10.2'
 
       - name: Prepare persistent release signing
-        if: ${{ secrets.XCORE_KEYSTORE_BASE64 != '' }}
+        if: env.XCORE_HAS_SIGNING_KEY == 'true'
         env:
           XCORE_KEYSTORE_BASE64: ${{ secrets.XCORE_KEYSTORE_BASE64 }}
         run: |
           echo "$XCORE_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/xcore-release.jks"
 
       - name: Build update-ready APK
-        if: ${{ secrets.XCORE_KEYSTORE_BASE64 != '' }}
+        if: env.XCORE_HAS_SIGNING_KEY == 'true'
         env:
           XCORE_KEYSTORE_FILE: ${{ github.workspace }}/xcore-release.jks
           XCORE_KEYSTORE_PASSWORD: ${{ secrets.XCORE_KEYSTORE_PASSWORD }}
@@ -52,18 +54,18 @@ jobs:
         run: gradle --no-daemon :app:assembleRelease
 
       - name: Build debug APK (fallback)
-        if: ${{ secrets.XCORE_KEYSTORE_BASE64 == '' }}
+        if: env.XCORE_HAS_SIGNING_KEY != 'true'
         run: gradle --no-daemon :app:assembleDebug
 
       - name: Upload update-ready APK
-        if: ${{ secrets.XCORE_KEYSTORE_BASE64 != '' }}
+        if: env.XCORE_HAS_SIGNING_KEY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: XCORE-Android-Update
           path: app/build/outputs/apk/release/*.apk
 
       - name: Upload debug APK
-        if: ${{ secrets.XCORE_KEYSTORE_BASE64 == '' }}
+        if: env.XCORE_HAS_SIGNING_KEY != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: XCORE-Android-Debug
