@@ -775,7 +775,7 @@ private void automation() {
         TextView h = label("Grupo de Suporte", 23);
         h.setTypeface(null, 1);
         titles.addView(h);
-        titles.addView(muted("Configure vários grupos com mensagem e intervalo independentes."));
+        titles.addView(muted("A primeira notificação de um grupo configurado liga o motor automaticamente."));
         heading.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
         content.addView(heading);
 
@@ -784,7 +784,7 @@ private void automation() {
         boolean motorRunning = SupportMotorService.isRunning();
         TextView motorStatus = muted(motorRunning
                 ? "●  MOTOR ATIVO — executando os grupos configurados."
-                : "●  MOTOR PARADO — ative para iniciar os envios automáticos.");
+                : "●  MOTOR PARADO — aguardando uma notificação de grupo.");
         motorStatus.setTextColor(motorRunning ? success : warning);
         info.addView(motorStatus);
 
@@ -800,7 +800,7 @@ private void automation() {
         motor.setOnClickListener(v -> { if (SupportMotorService.isRunning()) pauseSupportMotor(); else startSupportMotor(); });
         info.addView(motor);
 
-        info.addView(muted("O XCORE também mantém uma notificação persistente do motor. Nela você pode ativar ou pausar o motor sem abrir o aplicativo."));
+        info.addView(muted("Ao receber uma notificação de um grupo configurado, o XCORE ativa o motor automaticamente. Depois disso, os avisos continuam conforme os intervalos definidos até você pausar o motor."));
         content.addView(info);
 
         Button accessibility = new Button(this);
@@ -944,7 +944,7 @@ private void automation() {
         active.setChecked(existing == null || existing.isActive());
         form.addView(active);
 
-        TextView help = muted("O agendamento roda separado das notificações do WhatsApp. Para intervalos em minutos, o Android pode executar com pequena variação de horário.");
+        TextView help = muted("A notificação do grupo é apenas o gatilho inicial. Depois que o motor iniciar, os avisos continuam pelos intervalos configurados até você desligar o motor.");
         help.setPadding(0, dp(5), 0, 0);
         form.addView(help);
 
