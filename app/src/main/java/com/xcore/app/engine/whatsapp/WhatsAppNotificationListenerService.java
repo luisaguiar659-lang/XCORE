@@ -9,6 +9,7 @@ import com.xcore.app.engine.masterflix.MasterflixActivity;
 import com.xcore.app.engine.masterflix.MasterflixWebAutomation;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 public final class WhatsAppNotificationListenerService extends NotificationListenerService {
     private static final String WHATSAPP_BUSINESS_PACKAGE = "com.whatsapp.w4b";
@@ -17,6 +18,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
     private WhatsAppTriggerEngine engine;
     private WhatsAppNotificationTransport transport;
     private final Map<String, Long> processedNotifications = new HashMap<>();
+    private final Map<String, Long> sentMessages = new HashMap<>();
 
     @Override public void onCreate() {
         super.onCreate();
@@ -57,6 +59,28 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
 
         String sender = extractSender(notification);
         if (sender.isEmpty()) sender = key;
+
+        // O próprio WhatsApp pode publicar uma nova notificação depois que
+        // o XCORE responde. Nunca transforme uma resposta enviada pelo XCORE
+        // em uma nova mensagem de entrada, evitando loops como "Boa tarde" -> "Boa tarde".
+        String outgoingKey = normalizeLoopKey(sender, text.toString());
+        synchronized (sentMessages) {
+            Long sentAt = sentMessages.get(outgoingKey);
+            if (sentAt != null) {
+                if (now - sentAt < 15000L) {
+                    sentMessages.remove(outgoingKey);
+                    return;
+                }
+                sentMessages.remove(outgoingKey);
+            }
+        }
+
+        String conversationKey = normalizeLoopKey(sender, text.toString());
+        synchronized (processedNotifications) {
+            Long previousMessage = processedNotifications.get(conversationKey);
+            if (previousMessage != null && now - previousMessage < 2500L) return;
+            processedNotifications.put(conversationKey, now);
+        }
 
         transport.setReplyTarget(sbn);
 
@@ -108,6 +132,25 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         metadata.put("packageName", sbn.getPackageName());
         metadata.put("sender", sender);
         return metadata;
+    }
+
+    void markOutgoing(String phone, String text) {
+        if (text == null || text.trim().isEmpty()) return;
+        String key = normalizeLoopKey(phone, text);
+        synchronized (sentMessages) {
+            sentMessages.put(key, System.currentTimeMillis());
+            if (sentMessages.size() > 100) {
+                sentMessages.entrySet().removeIf(e ->
+                        System.currentTimeMillis() - e.getValue() > 30000L);
+            }
+        }
+    }
+
+    private static String normalizeLoopKey(String sender, String text) {
+        String a = sender == null ? "" : sender.trim().toLowerCase(Locale.ROOT);
+        String b = text == null ? "" : text.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("\s+", " ");
+        return a + "|" + b;
     }
 
     private static final class LocalWhatsAppFlowRouter implements WhatsAppFlowRouter {
