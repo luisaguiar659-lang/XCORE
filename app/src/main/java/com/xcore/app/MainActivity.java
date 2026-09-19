@@ -677,8 +677,8 @@ private void automation() {
             String responseText = response.getText().toString().trim();
             String questionText = question.getText().toString().trim();
 
-            if (responseText.isEmpty()) {
-                Toast.makeText(this, "Informe a resposta que o cliente receberá.", Toast.LENGTH_SHORT).show();
+            if (responseText.isEmpty() && !WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
+                Toast.makeText(this, "Informe a resposta ou use o fluxo Teste do Masterflix.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
