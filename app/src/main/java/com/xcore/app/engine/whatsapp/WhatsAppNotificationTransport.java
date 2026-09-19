@@ -57,8 +57,10 @@ public final class WhatsAppNotificationTransport implements WhatsAppTransport {
 
         try {
             PendingIntent pendingIntent = currentReplyAction.actionIntent;
-            pendingIntent.send(service, 0, intent);
+            // Marca antes do send(): o WhatsApp pode publicar a notificação
+            // da mensagem enviada imediatamente após o RemoteInput.
             service.markOutgoing(phone, text);
+            pendingIntent.send(service, 0, intent);
             return WhatsAppResult.success("Resposta enviada pela notificação", null);
         } catch (PendingIntent.CanceledException e) {
             return WhatsAppResult.error("A ação de resposta da notificação expirou");
