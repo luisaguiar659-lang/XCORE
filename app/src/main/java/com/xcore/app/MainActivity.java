@@ -858,52 +858,6 @@ public class MainActivity extends Activity {
 
         addNotificationAccessCard();
 
-        LinearLayout backend = box();
-        TextView bh = label("Backend XCORE", 17);
-        bh.setTypeface(null, 1);
-        backend.addView(bh);
-        backend.addView(muted("Usado somente para sincronizar os comandos do WhatsApp. As mensagens não passam pelo backend."));
-
-        EditText url = new EditText(this);
-        url.setHint("URL do backend (ex.: https://seu-servidor)");
-        url.setTextColor(text);
-        url.setHintTextColor(muted);
-        url.setSingleLine(true);
-        url.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
-        url.setText(backendConfig.getUrl());
-        backend.addView(url);
-
-        EditText key = new EditText(this);
-        key.setHint("Chave da API do XCORE");
-        key.setTextColor(text);
-        key.setHintTextColor(muted);
-        key.setSingleLine(true);
-        key.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        key.setText(backendConfig.getApiKey());
-        backend.addView(key);
-
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setGravity(Gravity.CENTER_VERTICAL);
-        Button save = smallAction("Salvar");
-        Button test = smallAction("Testar conexão");
-        buttons.addView(save);
-        buttons.addView(test);
-        backend.addView(buttons);
-
-        save.setOnClickListener(v -> {
-            backendConfig.save(url.getText().toString().trim(), key.getText().toString().trim());
-            status.setText("●  Configuração do backend salva");
-            status.setTextColor(success);
-            syncCommandsFromBackend();
-        });
-
-        test.setOnClickListener(v -> {
-            backendConfig.save(url.getText().toString().trim(), key.getText().toString().trim());
-            testBackendConnection();
-        });
-
-        content.addView(backend);
-
         LinearLayout commands = box();
         TextView ch = label("Comandos e gatilhos", 17);
         ch.setTypeface(null, 1);
