@@ -5,6 +5,9 @@ import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
+import android.accessibilityservice.AccessibilityServiceInfo;
+import android.view.accessibility.AccessibilityManager;
+import com.xcore.app.engine.masterflix.MasterflixAutomationAccessibilityService;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -315,6 +318,14 @@ public class MainActivity extends Activity {
     private void openNotificationAccessSettings() {
         try {
             startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+        } catch (Exception error) {
+            startActivity(new Intent(Settings.ACTION_SETTINGS));
+        }
+    }
+
+    private void openMasterflixAccessibilitySettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
         } catch (Exception error) {
             startActivity(new Intent(Settings.ACTION_SETTINGS));
         }
@@ -783,14 +794,30 @@ private void automation() {
         commands.addView(manage);
         content.addView(commands);
 
+        LinearLayout masterflix = box();
+        TextView mh = label("Automação Masterflix", 17);
+        mh.setTypeface(null, 1);
+        masterflix.addView(mh);
+        boolean masterflixReady = MasterflixAutomationAccessibilityService.isEnabled();
+        masterflix.addView(muted(masterflixReady
+                ? "Ativo • o XCORE pode abrir o Masterflix no Chrome, gerar o teste e devolver o conteúdo ao cliente."
+                : "Necessário para o comando Teste abrir o Masterflix e gerar o acesso automaticamente."));
+        Button masterflixAccess = smallAction(masterflixReady ? "✓ Automação ativa" : "Ativar automação");
+        masterflixAccess.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
+        masterflixAccess.setEnabled(!masterflixReady);
+        masterflixAccess.setOnClickListener(v -> openMasterflixAccessibilitySettings());
+        masterflix.addView(masterflixAccess);
+        content.addView(masterflix);
+
         LinearLayout security = box();
         TextView sh = label("Status do módulo", 17);
         sh.setTypeface(null, 1);
         security.addView(sh);
         security.addView(chip(
-                isNotificationAccessGranted() ? "WHATSAPP PRONTO" : "AGUARDANDO ACESSO ÀS NOTIFICAÇÕES",
-                isNotificationAccessGranted() ? success : warning,
-                isNotificationAccessGranted() ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
+                isNotificationAccessGranted() && masterflixReady ? "WHATSAPP + MASTERFLIX PRONTOS" :
+                        "AGUARDANDO CONFIGURAÇÃO",
+                isNotificationAccessGranted() && masterflixReady ? success : warning,
+                isNotificationAccessGranted() && masterflixReady ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
         content.addView(security);
 
         Space bottomSpace = new Space(this);
