@@ -1,0 +1,13 @@
+{
+  "name": "xcore-backend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Backend do XCORE para webhook e automação WhatsApp Business",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
