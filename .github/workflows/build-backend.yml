@@ -15,9 +15,79 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           package-manager-cache: false
+
       - run: node --check src/server.js
       - run: npm pack --dry-run
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install Android SDK platform
+        working-directory: .
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - name: Check persistent release signing
+        id: signing_check
+        working-directory: .
+        env:
+          XCORE_KEYSTORE_BASE64: ${{ secrets.XCORE_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          if [ -n "$XCORE_KEYSTORE_BASE64" ]; then
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare persistent release signing
+        if: steps.signing_check.outputs.has_key == 'true'
+        working-directory: .
+        env:
+          XCORE_KEYSTORE_BASE64: ${{ secrets.XCORE_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$XCORE_KEYSTORE_BASE64" | base64 --decode > "$GITHUB_WORKSPACE/xcore-release.jks"
+          test -s "$GITHUB_WORKSPACE/xcore-release.jks"
+
+      - name: Build update-ready APK
+        if: steps.signing_check.outputs.has_key == 'true'
+        working-directory: .
+        env:
+          XCORE_KEYSTORE_FILE: ${{ github.workspace }}/xcore-release.jks
+          XCORE_KEYSTORE_PASSWORD: ${{ secrets.XCORE_KEYSTORE_PASSWORD }}
+          XCORE_KEY_ALIAS: ${{ secrets.XCORE_KEY_ALIAS }}
+          XCORE_KEY_PASSWORD: ${{ secrets.XCORE_KEY_PASSWORD }}
+        run: gradle --no-daemon :app:assembleRelease
+
+      - name: Build debug APK (fallback)
+        if: steps.signing_check.outputs.has_key != 'true'
+        working-directory: .
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Upload APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: XCORE-Android-Update
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
