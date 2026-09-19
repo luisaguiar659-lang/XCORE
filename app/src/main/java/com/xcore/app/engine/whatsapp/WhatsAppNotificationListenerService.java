@@ -4,7 +4,8 @@ import android.app.Notification;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import com.xcore.app.engine.masterflix.MasterflixAutomationAccessibilityService;
+import com.xcore.app.engine.masterflix.MasterflixActivity;
+import com.xcore.app.engine.masterflix.MasterflixWebAutomation;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -123,21 +124,22 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
 
         @Override public WhatsAppResult execute(String flowId, WhatsAppMessage message) {
             if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
-                MasterflixAutomationAccessibilityService.startTest(
-                        "MASTERFLIX TESTE COMPLETO 1H",
-                        new MasterflixAutomationAccessibilityService.Callback() {
-                            @Override public void onSuccess(String text) {
-                                transport.sendText(message.getPhone(), "🎬 TESTE GERADO\n\n" + text);
-                                transport.clearReplyTarget(message.getPhone());
-                            }
-
-                            @Override public void onError(String error) {
-                                transport.sendText(message.getPhone(), "⚠️ Não foi possível gerar o teste: " + error);
-                                transport.clearReplyTarget(message.getPhone());
-                            }
-                        }
-                );
-                return WhatsAppResult.success("Geração do teste Masterflix iniciada", null);
+                String phone = message.getPhone();
+                MasterflixWebAutomation.request(phone, "MASTERFLIX TESTE COMPLETO 1H", transport);
+                try {
+                    android.content.Intent intent = new android.content.Intent(
+                            WhatsAppNotificationListenerService.this,
+                            MasterflixActivity.class);
+                    intent.putExtra(MasterflixActivity.EXTRA_AUTO_TEST, true);
+                    intent.putExtra(MasterflixActivity.EXTRA_TEST_LABEL, "MASTERFLIX TESTE COMPLETO 1H");
+                    intent.putExtra(MasterflixActivity.EXTRA_PHONE, phone);
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    return WhatsAppResult.success("Masterflix aberto para gerar o teste", null);
+                } catch (Exception error) {
+                    MasterflixWebAutomation.finishRequest();
+                    return WhatsAppResult.error("Não foi possível abrir o Masterflix: " + error.getMessage());
+                }
             }
 
             return WhatsAppResult.success("Fluxo " + flowId + " recebido pela notificação", null);
