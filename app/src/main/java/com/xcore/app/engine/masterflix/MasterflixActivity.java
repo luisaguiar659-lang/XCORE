@@ -11,7 +11,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -28,7 +27,6 @@ public final class MasterflixActivity extends Activity {
 
     private WebView webView;
     private ProgressBar progress;
-    private Button testButton;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,7 +40,7 @@ public final class MasterflixActivity extends Activity {
         bar.setPadding(10, 8, 10, 8);
         bar.setBackgroundColor(Color.rgb(16, 24, 43));
 
-        Button back = new Button(this);
+        android.widget.Button back = new android.widget.Button(this);
         back.setText("‹");
         back.setTextSize(28);
         back.setTextColor(Color.WHITE);
@@ -102,25 +100,6 @@ public final class MasterflixActivity extends Activity {
 
         content.addView(webView, new FrameLayout.LayoutParams(-1, -1));
 
-        testButton = new Button(this);
-        testButton.setText("🎬  GERAR TESTE 1 HORA");
-        testButton.setTextSize(16);
-        testButton.setTextColor(Color.WHITE);
-        testButton.setAllCaps(false);
-        testButton.setTypeface(null, 1);
-        testButton.setBackgroundColor(Color.rgb(25, 170, 100));
-        testButton.setPadding(12, 0, 12, 0);
-        testButton.setOnClickListener(v -> {
-            testButton.setEnabled(false);
-            testButton.setText("Gerando teste...");
-            MasterflixWebAutomation.start(webView, TESTE_1H, null);
-        });
-
-        FrameLayout.LayoutParams buttonParams =
-                new FrameLayout.LayoutParams(-1, 64, Gravity.BOTTOM);
-        buttonParams.setMargins(18, 0, 18, 82);
-        content.addView(testButton, buttonParams);
-
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
 
@@ -147,9 +126,6 @@ public final class MasterflixActivity extends Activity {
     }
 
     public void finishAutomation(String message, String error) {
-        testButton.setEnabled(true);
-        testButton.setText("🎬  GERAR TESTE 1 HORA");
-
         if (error != null) {
             Toast.makeText(this, error, Toast.LENGTH_LONG).show();
             MasterflixWebAutomation.finishRequest();
