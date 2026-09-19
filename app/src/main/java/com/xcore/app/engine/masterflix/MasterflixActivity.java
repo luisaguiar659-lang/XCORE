@@ -125,6 +125,19 @@ public final class MasterflixActivity extends Activity {
         setContentView(root);
 
         webView.loadUrl(URL);
+
+        if (getIntent().getBooleanExtra(EXTRA_AUTO_TEST, false)) {
+            final String label = getIntent().getStringExtra(EXTRA_TEST_LABEL);
+            final String phone = getIntent().getStringExtra(EXTRA_PHONE);
+            if (phone != null && !phone.trim().isEmpty()) {
+                MasterflixWebAutomation.request(phone, label, null);
+            }
+            webView.postDelayed(() -> MasterflixWebAutomation.start(
+                    webView,
+                    label == null ? TESTE_1H : label,
+                    phone
+            ), 1800);
+        }
     }
 
     @Override public void onBackPressed() {
