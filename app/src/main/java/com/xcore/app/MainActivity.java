@@ -9,15 +9,22 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
 import com.xcore.app.engine.whatsapp.AndroidWhatsAppTriggerStore;
+import com.xcore.app.engine.whatsapp.WhatsAppBackendConfig;
 import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private LinearLayout content;
     private TextView status;
     private Button dashboardTab, automationTab, settingsTab;
     private AndroidWhatsAppTriggerStore triggerStore;
+    private WhatsAppBackendConfig backendConfig;
+    private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
 
     private final int bg = Color.rgb(7, 11, 23);
     private final int surface = Color.rgb(16, 24, 43);
@@ -34,7 +41,9 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(bg);
         getWindow().setNavigationBarColor(bg);
         triggerStore = new AndroidWhatsAppTriggerStore(this);
+        backendConfig = new WhatsAppBackendConfig(this);
         build();
+        syncCommandsFromBackend();
     }
 
     private int dp(int value) {
@@ -251,7 +260,7 @@ public class MainActivity extends Activity {
         navs.addView(settingsTab);
         root.addView(navs);
 
-        status = muted("●  Sistema pronto para demonstração");
+        status = muted("●  Sistema pronto");
         status.setTextColor(success);
         status.setPadding(dp(10), dp(10), dp(10), dp(10));
         status.setBackground(background(Color.rgb(8, 22, 34), 14));
@@ -318,7 +327,7 @@ public class MainActivity extends Activity {
         TextView h = label("Teste rápido", 18);
         h.setTypeface(null, 1);
         demo.addView(h);
-        demo.addView(muted("Execute um fluxo local sem acessar serviços externos."));
+        demo.addView(muted("Teste a configuração local do atendimento antes de publicar o fluxo."));
 
         EditText name = new EditText(this);
         name.setHint("Nome do cliente");
@@ -372,9 +381,9 @@ public class MainActivity extends Activity {
             out.postDelayed(() -> out.setText("3/5  Simulando Master XCloud…"), 900);
             out.postDelayed(() -> out.setText("4/5  Simulando Master IBO…"), 1350);
             out.postDelayed(() -> {
-                out.setText("✓  Demonstração concluída");
+                out.setText("✓  Teste local concluído");
                 out.setTextColor(success);
-                status.setText("●  Demonstração concluída com sucesso");
+                status.setText("●  Teste local concluído com sucesso");
                 status.setTextColor(success);
                 run.setText("Executar novamente");
                 run.setEnabled(true);
@@ -532,6 +541,7 @@ public class MainActivity extends Activity {
         active.setOnCheckedChangeListener((buttonView, checked) -> {
             trigger.setActive(checked);
             triggerStore.add(trigger);
+            syncUpsert(trigger);
             buttonView.setTextColor(checked ? success : muted);
             status.setText(checked ? "●  Comando ativado" : "●  Comando desativado");
             status.setTextColor(checked ? success : warning);
@@ -670,6 +680,7 @@ public class MainActivity extends Activity {
                     flowId, responseText, questionText, active.isChecked());
 
             triggerStore.add(saved);
+            syncUpsert(saved);
             dialog.dismiss();
             status.setText("●  Comando salvo");
             status.setTextColor(success);
@@ -706,6 +717,7 @@ public class MainActivity extends Activity {
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Excluir", (dialog, which) -> {
                     triggerStore.remove(trigger.getId());
+                    syncDelete(trigger.getId());
                     status.setText("●  Comando excluído");
                     status.setTextColor(success);
                     whatsappTriggers();
@@ -716,50 +728,177 @@ public class MainActivity extends Activity {
     private void settings() {
         setActive(settingsTab);
         content.removeAllViews();
-        content.addView(sectionTitle("Configurações", "Controle o ambiente e as integrações."));
+        content.addView(sectionTitle("Configurações", "Conecte o aplicativo ao backend do XCORE."));
 
-        LinearLayout mode = box();
-        TextView modeTitle = label("Ambiente", 17);
-        modeTitle.setTypeface(null, 1);
-        mode.addView(modeTitle);
-        mode.addView(muted("Selecione o ambiente usado pelo XCORE."));
+        LinearLayout backend = box();
+        TextView bh = label("Backend XCORE", 17);
+        bh.setTypeface(null, 1);
+        backend.addView(bh);
+        backend.addView(muted("O app sincroniza os comandos com o servidor. Use HTTPS em produção."));
 
-        RadioGroup group = new RadioGroup(this);
-        group.setOrientation(RadioGroup.VERTICAL);
-        RadioButton demo = new RadioButton(this);
-        demo.setText("  DEMO / desenvolvimento");
-        demo.setTextColor(text);
-        demo.setChecked(true);
-        RadioButton production = new RadioButton(this);
-        production.setText("  PRODUÇÃO");
-        production.setTextColor(text);
-        group.addView(demo);
-        group.addView(production);
-        mode.addView(group);
+        EditText url = new EditText(this);
+        url.setHint("URL do backend (ex.: https://seu-servidor)");
+        url.setTextColor(text);
+        url.setHintTextColor(muted);
+        url.setSingleLine(true);
+        url.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        url.setText(backendConfig.getUrl());
+        backend.addView(url);
 
-        Button save = new Button(this);
-        save.setText("Salvar configurações");
-        save.setTextColor(Color.WHITE);
-        save.setAllCaps(false);
-        save.setTypeface(null, 1);
-        save.setBackground(background(accent, 16));
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-1, dp(50));
-        sp.setMargins(0, dp(10), 0, 0);
-        save.setLayoutParams(sp);
+        EditText key = new EditText(this);
+        key.setHint("Chave da API do XCORE");
+        key.setTextColor(text);
+        key.setHintTextColor(muted);
+        key.setSingleLine(true);
+        key.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        key.setText(backendConfig.getApiKey());
+        backend.addView(key);
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setGravity(Gravity.CENTER_VERTICAL);
+        Button save = smallAction("Salvar");
+        Button test = smallAction("Testar conexão");
+        buttons.addView(save);
+        buttons.addView(test);
+        backend.addView(buttons);
+
         save.setOnClickListener(v -> {
-            status.setText("●  Configuração salva localmente");
+            backendConfig.save(url.getText().toString().trim(), key.getText().toString().trim());
+            status.setText("●  Configuração do backend salva");
             status.setTextColor(success);
+            syncCommandsFromBackend();
         });
-        mode.addView(save);
-        content.addView(mode);
+
+        test.setOnClickListener(v -> {
+            backendConfig.save(url.getText().toString().trim(), key.getText().toString().trim());
+            testBackendConnection();
+        });
+
+        content.addView(backend);
 
         LinearLayout security = box();
         TextView sh = label("Segurança", 17);
         sh.setTypeface(null, 1);
         security.addView(sh);
-        security.addView(muted("Credenciais e endpoints de produção devem ser configurados somente com dados autorizados."));
-        security.addView(chip("CREDENCIAIS PROTEGIDAS", success, Color.rgb(18, 55, 45)));
+        security.addView(muted("A chave usada pelo app é somente a chave do backend. O token permanente do WhatsApp fica no servidor."));
+        security.addView(chip(backendConfig.isConfigured() ? "BACKEND CONFIGURADO" : "BACKEND NÃO CONFIGURADO",
+                backendConfig.isConfigured() ? success : warning,
+                backendConfig.isConfigured() ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
         content.addView(security);
+    }
+
+    private void testBackendConnection() {
+        if (!backendConfig.isConfigured()) {
+            status.setText("●  Informe URL e chave do backend");
+            status.setTextColor(warning);
+            return;
+        }
+        status.setText("●  Testando conexão…");
+        status.setTextColor(muted);
+        networkExecutor.execute(() -> {
+            try {
+                backendConfig.client().health();
+                runOnUiThread(() -> {
+                    status.setText("●  Backend online");
+                    status.setTextColor(success);
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    status.setText("●  Falha no backend: " + shortError(error));
+                    status.setTextColor(warning);
+                });
+            }
+        });
+    }
+
+    private void syncUpsert(final WhatsAppTrigger trigger) {
+        if (!backendConfig.isConfigured() || trigger == null) return;
+        networkExecutor.execute(() -> {
+            try {
+                backendConfig.client().upsertCommand(trigger);
+                runOnUiThread(() -> {
+                    status.setText("●  Comando sincronizado com o backend");
+                    status.setTextColor(success);
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    status.setText("●  Salvo no aparelho; sync falhou: " + shortError(error));
+                    status.setTextColor(warning);
+                });
+            }
+        });
+    }
+
+    private void syncDelete(final String id) {
+        if (!backendConfig.isConfigured() || id == null) return;
+        networkExecutor.execute(() -> {
+            try {
+                backendConfig.client().deleteCommand(id);
+                runOnUiThread(() -> {
+                    status.setText("●  Exclusão sincronizada");
+                    status.setTextColor(success);
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    status.setText("●  Excluído no aparelho; sync falhou: " + shortError(error));
+                    status.setTextColor(warning);
+                });
+            }
+        });
+    }
+
+    private void syncCommandsFromBackend() {
+        if (!backendConfig.isConfigured()) return;
+        networkExecutor.execute(() -> {
+            try {
+                String raw = backendConfig.client().listCommands();
+                JSONObject root = new JSONObject(raw);
+                JSONArray list = root.optJSONArray("commands");
+                if (list == null || list.length() == 0) return;
+
+                triggerStore.clear();
+                for (int i = 0; i < list.length(); i++) {
+                    JSONObject item = list.getJSONObject(i);
+                    WhatsAppTrigger.MatchType matchType;
+                    try {
+                        matchType = WhatsAppTrigger.MatchType.valueOf(item.optString("matchType", "CONTAINS"));
+                    } catch (Exception ignored) {
+                        matchType = WhatsAppTrigger.MatchType.CONTAINS;
+                    }
+                    triggerStore.add(new WhatsAppTrigger(
+                            item.optString("id"),
+                            item.optString("name"),
+                            matchType,
+                            item.optString("pattern"),
+                            item.optString("flowId"),
+                            item.optString("response"),
+                            item.optString("question"),
+                            item.optBoolean("active", true)
+                    ));
+                }
+                runOnUiThread(() -> {
+                    status.setText("●  Comandos sincronizados do backend");
+                    status.setTextColor(success);
+                    if (content != null) whatsappTriggers();
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    status.setText("●  Backend indisponível; usando comandos locais");
+                    status.setTextColor(warning);
+                });
+            }
+        });
+    }
+
+    private String shortError(Exception error) {
+        String message = error == null ? "erro desconhecido" : error.getMessage();
+        if (message == null || message.trim().isEmpty()) return "erro de conexão";
+        return message.length() > 90 ? message.substring(0, 90) + "…" : message;
+    }
+
+    @Override protected void onDestroy() {
+        networkExecutor.shutdownNow();
+        super.onDestroy();
     }
 
     private void showIntegration(String name) {
