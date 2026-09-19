@@ -15,6 +15,7 @@ import com.xcore.app.engine.whatsapp.AndroidWhatsAppTriggerStore;
 import com.xcore.app.engine.whatsapp.WhatsAppBackendConfig;
 import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
