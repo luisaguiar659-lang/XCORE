@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">XCORE</string>
+    <string name="accessibility_service_description">Permite ao XCORE automatizar os avisos programados do Grupo de Suporte no WhatsApp.</string>
+</resources>
