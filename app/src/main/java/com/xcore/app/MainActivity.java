@@ -803,10 +803,10 @@ private void automation() {
         sh.setTypeface(null, 1);
         security.addView(sh);
         security.addView(chip(
-                isNotificationAccessGranted() && masterflixReady ? "WHATSAPP + MASTERFLIX PRONTOS" :
+                isNotificationAccessGranted() ? "WHATSAPP PRONTO" :
                         "AGUARDANDO CONFIGURAÇÃO",
-                isNotificationAccessGranted() && masterflixReady ? success : warning,
-                isNotificationAccessGranted() && masterflixReady ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
+                isNotificationAccessGranted() ? success : warning,
+                isNotificationAccessGranted() ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)));
         content.addView(security);
 
         Space bottomSpace = new Space(this);
