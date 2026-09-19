@@ -11,7 +11,7 @@ public final class SupportGroupScheduler {
     public static void schedule(Context c, SupportGroup g){
         cancel(c,g.getId()); if(!g.isActive())return;
         long minutes=g.getUnit()==SupportGroup.Unit.HOURS?g.getInterval()*60L:g.getInterval();
-        long ms=Math.max(15L*60L*1000L,minutes*60L*1000L);
+        long ms=Math.max(60L*1000L,minutes*60L*1000L);
         Intent i=new Intent(c,SupportGroupAlarmReceiver.class).setAction("com.xcore.app.SUPPORT_NOTICE").putExtra("group_id",g.getId());
         PendingIntent p=PendingIntent.getBroadcast(c,stable(g.getId()),i,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
         AlarmManager a=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
