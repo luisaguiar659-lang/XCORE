@@ -11,10 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Persistência Android dos gatilhos do WhatsApp.
- *
- * Nenhum gatilho é criado automaticamente: somente regras salvas pelo
- * usuário podem acionar um fluxo.
+ * Persistência Android dos comandos do WhatsApp.
  */
 public final class AndroidWhatsAppTriggerStore implements WhatsAppTriggerRepository {
 
@@ -72,6 +69,8 @@ public final class AndroidWhatsAppTriggerStore implements WhatsAppTriggerReposit
                         type,
                         item.optString("pattern"),
                         item.optString("flowId"),
+                        item.optString("response"),
+                        item.optString("question"),
                         item.optBoolean("active", false)
                 ));
             }
@@ -106,6 +105,8 @@ public final class AndroidWhatsAppTriggerStore implements WhatsAppTriggerReposit
                 item.put("matchType", trigger.getMatchType().name());
                 item.put("pattern", trigger.getPattern());
                 item.put("flowId", trigger.getFlowId());
+                item.put("response", trigger.getResponse());
+                item.put("question", trigger.getQuestion());
                 item.put("active", trigger.isActive());
                 array.put(item);
             } catch (Exception ignored) {
