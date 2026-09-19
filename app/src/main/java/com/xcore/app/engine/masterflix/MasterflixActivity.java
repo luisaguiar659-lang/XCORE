@@ -129,7 +129,8 @@ public final class MasterflixActivity extends Activity {
         if (getIntent().getBooleanExtra(EXTRA_AUTO_TEST, false)) {
             final String label = getIntent().getStringExtra(EXTRA_TEST_LABEL);
             final String phone = getIntent().getStringExtra(EXTRA_PHONE);
-            if (phone != null && !phone.trim().isEmpty()) {
+            if (phone != null && !phone.trim().isEmpty()
+                    && !MasterflixWebAutomation.hasRequest()) {
                 MasterflixWebAutomation.request(phone, label, null);
             }
             webView.postDelayed(() -> MasterflixWebAutomation.start(
