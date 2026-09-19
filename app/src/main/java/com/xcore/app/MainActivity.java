@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
-import com.xcore.app.engine.masterflix.MasterflixAutomationAccessibilityService;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
@@ -321,12 +320,8 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void openMasterflixAccessibilitySettings() {
-        try {
-            startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
-        } catch (Exception error) {
-            startActivity(new Intent(Settings.ACTION_SETTINGS));
-        }
+    private void openMasterflix() {
+        startActivity(new Intent(this, com.xcore.app.engine.masterflix.MasterflixActivity.class));
     }
 
     private void addNotificationAccessCard() {
@@ -793,18 +788,14 @@ private void automation() {
         content.addView(commands);
 
         LinearLayout masterflix = box();
-        TextView mh = label("Automação Masterflix", 17);
+        TextView mh = label("Masterflix", 17);
         mh.setTypeface(null, 1);
         masterflix.addView(mh);
-        boolean masterflixReady = MasterflixAutomationAccessibilityService.isEnabled();
-        masterflix.addView(muted(masterflixReady
-                ? "Ativo • o XCORE pode abrir o Masterflix no Chrome, gerar o teste e devolver o conteúdo ao cliente."
-                : "Necessário para o comando Teste abrir o Masterflix e gerar o acesso automaticamente."));
-        Button masterflixAccess = smallAction(masterflixReady ? "✓ Automação ativa" : "Ativar automação");
-        masterflixAccess.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
-        masterflixAccess.setEnabled(!masterflixReady);
-        masterflixAccess.setOnClickListener(v -> openMasterflixAccessibilitySettings());
-        masterflix.addView(masterflixAccess);
+        masterflix.addView(muted("Abra o painel Masterflix dentro do XCORE em uma WebView, com login persistente."));
+        Button openMasterflix = smallAction("Abrir Masterflix");
+        openMasterflix.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
+        openMasterflix.setOnClickListener(v -> openMasterflix());
+        masterflix.addView(openMasterflix);
         content.addView(masterflix);
 
         LinearLayout security = box();
@@ -939,6 +930,10 @@ private void automation() {
     private void showIntegration(String name) {
         if ("WhatsApp Business".equals(name)) {
             whatsappSettings();
+            return;
+        }
+        if ("Masterflix".equals(name)) {
+            openMasterflix();
             return;
         }
         Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
