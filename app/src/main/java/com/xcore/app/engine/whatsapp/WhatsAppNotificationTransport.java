@@ -6,40 +6,47 @@ import android.app.RemoteInput;
 import android.content.Intent;
 import android.os.Bundle;
 import android.service.notification.StatusBarNotification;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class WhatsAppNotificationTransport implements WhatsAppTransport {
     private final WhatsAppNotificationListenerService service;
-    private StatusBarNotification currentNotification;
-    private Notification.Action currentReplyAction;
+    private final Map<String, Notification.Action> replyActions = new HashMap<>();
 
     public WhatsAppNotificationTransport(WhatsAppNotificationListenerService service) {
         this.service = service;
     }
 
-    public synchronized void setReplyTarget(StatusBarNotification notification) {
-        currentNotification = notification;
-        currentReplyAction = findReplyAction(notification);
+    public synchronized void setReplyTarget(String phone, StatusBarNotification notification) {
+        if (phone == null || phone.trim().isEmpty()) return;
+        Notification.Action action = findReplyAction(notification);
+        if (action != null) replyActions.put(phone.trim(), action);
     }
 
-    public synchronized void clearReplyTarget() {
-        currentNotification = null;
-        currentReplyAction = null;
+    public synchronized void clearReplyTarget(String phone) {
+        if (phone == null) return;
+        replyActions.remove(phone.trim());
     }
 
-    @Override public WhatsAppResult start() {
+    @Override public synchronized WhatsAppResult start() {
         return WhatsAppResult.success("Transporte por notificações iniciado", null);
     }
 
-    @Override public WhatsAppResult stop() {
-        clearReplyTarget();
+    @Override public synchronized WhatsAppResult stop() {
+        replyActions.clear();
         return WhatsAppResult.success("Transporte por notificações parado", null);
     }
 
-    @Override public boolean isRunning() { return true; }
+    @Override public synchronized boolean isRunning() { return true; }
 
     @Override public synchronized WhatsAppResult sendText(String phone, String text) {
-        if (currentNotification == null || currentReplyAction == null) {
-            return WhatsAppResult.error("A notificação não possui ação de resposta");
+        if (phone == null || phone.trim().isEmpty()) {
+            return WhatsAppResult.error("Número do cliente não informado");
+        }
+
+        Notification.Action currentReplyAction = replyActions.get(phone.trim());
+        if (currentReplyAction == null) {
+            return WhatsAppResult.error("A ação de resposta do WhatsApp não está mais disponível");
         }
 
         RemoteInput[] inputs = currentReplyAction.getRemoteInputs();
@@ -60,7 +67,8 @@ public final class WhatsAppNotificationTransport implements WhatsAppTransport {
             pendingIntent.send(service, 0, intent);
             return WhatsAppResult.success("Resposta enviada pela notificação", null);
         } catch (PendingIntent.CanceledException e) {
-            return WhatsAppResult.error("A ação de resposta da notificação expirou");
+            replyActions.remove(phone.trim());
+            return WhatsAppResult.error("A ação de resposta do WhatsApp expirou");
         }
     }
 
