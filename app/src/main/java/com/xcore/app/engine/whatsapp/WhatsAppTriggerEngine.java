@@ -64,12 +64,23 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
         }
 
         String phone = message.getPhone().trim();
+
+        /*
+         * Um novo comando sempre tem prioridade sobre uma conversa existente.
+         * Isso permite enviar o mesmo comando novamente e reiniciar o fluxo,
+         * em vez de tratá-lo como uma resposta da etapa anterior.
+         */
+        WhatsAppTrigger trigger = triggerRepository.findMatch(message.getText());
+        if (trigger != null) {
+            return executeTrigger(phone, message, trigger);
+        }
+
         WhatsAppConversation conversation =
                 conversationStore == null ? null : conversationStore.get(phone);
 
         /*
-         * Se já existe uma conversa ativa, a mensagem é tratada como resposta
-         * da etapa atual. Ela não é confundida com um novo comando.
+         * Se não for um comando novo e já existir uma conversa ativa,
+         * a mensagem é tratada como resposta da etapa atual.
          */
         if (conversation != null) {
             WhatsAppResult continued = flowRouter.execute(conversation.getFlowId(), message);
@@ -79,13 +90,15 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
             return continued;
         }
 
-        WhatsAppTrigger trigger = triggerRepository.findMatch(message.getText());
-
-        // Sem comando correspondente: ignora completamente a mensagem.
+        // Sem comando correspondente e sem conversa ativa: ignora completamente.
         if (trigger == null) {
             return WhatsAppResult.success("Nenhum comando correspondente", null);
         }
 
+        return executeTrigger(phone, message, trigger);
+    }
+
+    private WhatsAppResult executeTrigger(String phone, WhatsAppMessage message, WhatsAppTrigger trigger) {
         if (trigger.getFlowId().isEmpty()) {
             return WhatsAppResult.error("Comando sem fluxo configurado: " + trigger.getName());
         }
