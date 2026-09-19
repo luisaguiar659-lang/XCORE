@@ -185,7 +185,12 @@ public class MainActivity extends Activity {
         arrow.setGravity(Gravity.CENTER);
         row.addView(arrow, new LinearLayout.LayoutParams(dp(26), dp(60)));
 
-        TextView pending = chip("PENDENTE", warning, Color.rgb(62, 48, 27));
+        boolean whatsappReady = "WhatsApp Business".equals(name) && isNotificationAccessGranted();
+        TextView pending = chip(
+                whatsappReady ? "ATIVO" : "PENDENTE",
+                whatsappReady ? success : warning,
+                whatsappReady ? Color.rgb(18, 55, 45) : Color.rgb(62, 48, 27)
+        );
         LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(-2, -2);
         cp.setMargins(0, 0, dp(7), 0);
         row.addView(pending, cp);
