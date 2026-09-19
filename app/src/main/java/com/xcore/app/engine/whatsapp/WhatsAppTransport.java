@@ -1,8 +1,10 @@
 package com.xcore.app.engine.whatsapp;
 
 /**
- * Canal de entrada/saída do provedor WhatsApp.
- * A implementação oficial será responsável por webhook e envio autenticado.
+ * Canal local de entrada/saída do WhatsApp.
+ *
+ * No XCORE, a implementação Android usa as notificações do WhatsApp
+ * e o RemoteInput da própria notificação para responder.
  */
 public interface WhatsAppTransport {
     WhatsAppResult start();
