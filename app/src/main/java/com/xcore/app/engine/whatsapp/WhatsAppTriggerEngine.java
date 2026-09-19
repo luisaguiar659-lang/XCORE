@@ -116,7 +116,16 @@ public final class WhatsAppTriggerEngine implements WhatsAppEngine {
             if (transport == null) {
                 return WhatsAppResult.error("Comando encontrado, mas o transporte WhatsApp não está configurado");
             }
-            return transport.sendText(phone, trigger.getResponse());
+
+            WhatsAppResult result = transport.sendText(phone, trigger.getResponse());
+
+            // Resposta automática é terminal. Não mantenha uma conversa sem
+            // flowId, pois a próxima mensagem poderia cair em uma continuação vazia.
+            if (trigger.getFlowId().isEmpty() && conversationStore != null) {
+                conversationStore.remove(phone);
+            }
+
+            return result;
         }
 
         return flowRouter.execute(trigger.getFlowId(), message);
