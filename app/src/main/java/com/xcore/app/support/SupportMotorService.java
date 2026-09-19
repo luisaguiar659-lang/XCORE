@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 public class SupportMotorService extends Service {
+    private static SupportMotorService instance;
+
+    public static boolean isRunning() { return instance != null; }
     public static final String ACTION_START = "com.xcore.app.support.START_MOTOR";
     private static final long LOOP_MS = 1000L;
     private final Handler handler = new Handler();
@@ -26,6 +29,7 @@ public class SupportMotorService extends Service {
 
     @Override public void onCreate() {
         super.onCreate();
+        instance = this;
         SupportMotorNotification.ensureChannel(this);
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(SupportMotorNotification.NOTIFICATION_ID,
@@ -100,6 +104,7 @@ public class SupportMotorService extends Service {
     }
 
     @Override public void onDestroy() {
+        if (instance == this) instance = null;
         handler.removeCallbacksAndMessages(null);
         nextRun.clear();
         SupportMotorNotification.showStopped(this);
