@@ -24,6 +24,14 @@
             android:name=".support.SupportGroupAlarmReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".support.SupportGroupBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".support.SupportWhatsAppAccessibilityService"
             android:label="XCORE - Automação do Grupo de Suporte"
