@@ -8,7 +8,6 @@ import android.provider.Settings;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -16,12 +15,6 @@ import com.xcore.app.engine.whatsapp.AndroidWhatsAppTriggerStore;
 import com.xcore.app.engine.whatsapp.WhatsAppBackendConfig;
 import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
-import com.xcore.app.support.SupportGroup;
-import com.xcore.app.support.SupportWhatsAppAccessibilityService;
-import com.xcore.app.support.SupportMotorNotification;
-import com.xcore.app.support.SupportMotorService;
-import com.xcore.app.support.SupportGroupStore;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
@@ -34,7 +27,6 @@ public class MainActivity extends Activity {
     private AndroidWhatsAppTriggerStore triggerStore;
     private WhatsAppBackendConfig backendConfig;
     private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
-    private SupportGroupStore supportGroupStore;
 
     private final int bg = Color.rgb(7, 11, 23);
     private final int surface = Color.rgb(16, 24, 43);
@@ -52,12 +44,7 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(bg);
         triggerStore = new AndroidWhatsAppTriggerStore(this);
         backendConfig = new WhatsAppBackendConfig(this);
-        supportGroupStore = new SupportGroupStore(this);
         build();
-        SupportMotorNotification.ensureChannel(this);
-        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission("android.permission.POST_NOTIFICATIONS") == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            SupportMotorNotification.showStopped(this);
-        }
         syncCommandsFromBackend();
     }
 
@@ -405,7 +392,6 @@ public class MainActivity extends Activity {
         addIntegration(R.drawable.masterflix_logo, "Masterflix", "Criação de testes");
         addIntegration(R.drawable.master_xcloud_logo, "Master XCloud", "Provisionamento");
         addIntegration(R.drawable.master_ibo_logo, "Master IBO", "Gestão do cliente");
-        addIntegration(R.drawable.whatsapp_logo, "Grupo de Suporte", "Avisos automáticos para grupos");
 
         Space bottomSpace = new Space(this);
         content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(82)));
@@ -739,252 +725,6 @@ private void automation() {
     }
 
     
-    private void startSupportMotor() {
-        Intent service = new Intent(this, com.xcore.app.support.SupportMotorService.class)
-                .setAction(com.xcore.app.support.SupportMotorService.ACTION_START);
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(service);
-        else startService(service);
-        Toast.makeText(this, "Motor de Suporte ativado.", Toast.LENGTH_SHORT).show();
-        supportGroups();
-    }
-
-    private void pauseSupportMotor() {
-        stopService(new Intent(this, com.xcore.app.support.SupportMotorService.class));
-        SupportMotorNotification.showStopped(this);
-        Toast.makeText(this, "Motor de Suporte pausado.", Toast.LENGTH_SHORT).show();
-        supportGroups();
-    }
-
-    private void supportGroups() {
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7001);
-        }
-
-        setActive(dashboardTab);
-        content.removeAllViews();
-
-        LinearLayout heading = new LinearLayout(this);
-        heading.setGravity(Gravity.CENTER_VERTICAL);
-        TextView back = label("‹", 32);
-        back.setGravity(Gravity.CENTER);
-        back.setOnClickListener(v -> dashboard());
-        heading.addView(back, new LinearLayout.LayoutParams(dp(42), dp(48)));
-
-        LinearLayout titles = new LinearLayout(this);
-        titles.setOrientation(LinearLayout.VERTICAL);
-        TextView h = label("Grupo de Suporte", 23);
-        h.setTypeface(null, 1);
-        titles.addView(h);
-        titles.addView(muted("A primeira notificação de um grupo configurado liga o motor automaticamente."));
-        heading.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
-        content.addView(heading);
-
-        LinearLayout info = box();
-        info.addView(label("Motor de Suporte", 17));
-        boolean motorRunning = SupportMotorService.isRunning();
-        TextView motorStatus = muted(motorRunning
-                ? "●  MOTOR ATIVO — executando os grupos configurados."
-                : "●  MOTOR PARADO — aguardando uma notificação de grupo.");
-        motorStatus.setTextColor(motorRunning ? success : warning);
-        info.addView(motorStatus);
-
-        Button motor = new Button(this);
-        motor.setText(motorRunning ? "⏸  Pausar motor" : "▶  Ativar motor");
-        motor.setTextColor(Color.WHITE);
-        motor.setAllCaps(false);
-        motor.setTypeface(null, 1);
-        motor.setBackground(background(motorRunning ? Color.rgb(62,48,27) : Color.rgb(34,92,69), 15));
-        LinearLayout.LayoutParams motorp = new LinearLayout.LayoutParams(-1, dp(48));
-        motorp.setMargins(0, dp(10), 0, 0);
-        motor.setLayoutParams(motorp);
-        motor.setOnClickListener(v -> { if (SupportMotorService.isRunning()) pauseSupportMotor(); else startSupportMotor(); });
-        info.addView(motor);
-
-        info.addView(muted("Ao receber uma notificação de um grupo configurado, o XCORE ativa o motor automaticamente. Depois disso, os avisos continuam conforme os intervalos definidos até você pausar o motor."));
-        content.addView(info);
-
-        Button accessibility = new Button(this);
-        accessibility.setText(SupportWhatsAppAccessibilityService.isRunning()
-                ? "✓  Automação do WhatsApp ativa"
-                : "Ativar automação do WhatsApp");
-        accessibility.setTextColor(Color.WHITE);
-        accessibility.setAllCaps(false);
-        accessibility.setTypeface(null, 1);
-        accessibility.setBackground(background(
-                SupportWhatsAppAccessibilityService.isRunning() ? Color.rgb(34,92,69) : accent, 15));
-        LinearLayout.LayoutParams accp = new LinearLayout.LayoutParams(-1, dp(48));
-        accp.setMargins(0, dp(10), 0, 0);
-        accessibility.setLayoutParams(accp);
-        accessibility.setOnClickListener(v -> {
-            try { startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); }
-            catch (Exception ignored) { startActivity(new Intent(Settings.ACTION_SETTINGS)); }
-        });
-        LinearLayout accessInfo = box();
-        accessInfo.addView(label("Automação do WhatsApp", 17));
-        accessInfo.addView(muted("Necessária para o motor conseguir navegar até o grupo e enviar a mensagem automaticamente."));
-        accessInfo.addView(accessibility);
-        content.addView(accessInfo);
-
-        Button add = new Button(this);
-        add.setText("+  Adicionar grupo");
-        add.setTextColor(Color.WHITE);
-        add.setAllCaps(false);
-        add.setTypeface(null, 1);
-        add.setBackground(background(accent, 16));
-        LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, dp(50));
-        ap.setMargins(0, dp(8), 0, dp(8));
-        add.setLayoutParams(ap);
-        add.setOnClickListener(v -> showSupportGroupDialog(null));
-        content.addView(add);
-
-        List<SupportGroup> groups = supportGroupStore.list();
-        if (groups.isEmpty()) {
-            LinearLayout empty = box();
-            empty.addView(label("Nenhum grupo configurado", 16));
-            empty.addView(muted("Adicione o primeiro grupo para definir a mensagem e a frequência."));
-            content.addView(empty);
-        } else {
-            for (SupportGroup group : groups) addSupportGroupCard(group);
-        }
-
-        Space bottomSpace = new Space(this);
-        content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(60)));
-    }
-
-    private void addSupportGroupCard(final SupportGroup group) {
-        LinearLayout card = box();
-
-        LinearLayout top = new LinearLayout(this);
-        top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView name = label(group.getGroupName(), 17);
-        name.setTypeface(null, 1);
-        top.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
-        top.addView(chip(group.isActive() ? "ATIVO" : "PAUSADO",
-                group.isActive() ? success : warning,
-                group.isActive() ? Color.rgb(18,55,45) : Color.rgb(62,48,27)));
-        card.addView(top);
-
-        TextView interval = muted("A cada " + group.getInterval() + " " +
-                (group.getUnit() == SupportGroup.Unit.HOURS ? "hora(s)" : "minuto(s)"));
-        interval.setPadding(0, dp(7), 0, dp(3));
-        card.addView(interval);
-
-        TextView msg = muted(group.getMessage());
-        msg.setMaxLines(3);
-        card.addView(msg);
-
-        LinearLayout actions = new LinearLayout(this);
-        actions.setGravity(Gravity.RIGHT);
-        Button edit = smallAction("Editar");
-        edit.setOnClickListener(v -> showSupportGroupDialog(group));
-        actions.addView(edit);
-        Button toggle = smallAction(group.isActive() ? "Pausar" : "Ativar");
-        toggle.setOnClickListener(v -> {
-            SupportGroup updated = new SupportGroup(group.getId(), group.getGroupName(), group.getMessage(),
-                    group.getInterval(), group.getUnit(), !group.isActive());
-            supportGroupStore.save(updated);
-            supportGroups();
-        });
-        actions.addView(toggle);
-        Button del = smallAction("Excluir");
-        del.setTextColor(Color.rgb(255,110,120));
-        del.setOnClickListener(v -> {
-            supportGroupStore.remove(group.getId());
-            supportGroups();
-        });
-        actions.addView(del);
-        card.addView(actions);
-        content.addView(card);
-    }
-
-    private void showSupportGroupDialog(final SupportGroup existing) {
-        LinearLayout form = new LinearLayout(this);
-        form.setOrientation(LinearLayout.VERTICAL);
-        form.setPadding(dp(20), dp(4), dp(20), 0);
-
-        EditText groupName = new EditText(this);
-        groupName.setHint("Nome do grupo no WhatsApp");
-        groupName.setTextColor(text);
-        groupName.setHintTextColor(muted);
-        groupName.setSingleLine(true);
-        if (existing != null) groupName.setText(existing.getGroupName());
-        form.addView(groupName);
-
-        EditText message = new EditText(this);
-        message.setHint("Mensagem automática");
-        message.setTextColor(text);
-        message.setHintTextColor(muted);
-        message.setGravity(Gravity.TOP);
-        message.setMinLines(4);
-        message.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        if (existing != null) message.setText(existing.getMessage());
-        form.addView(message);
-
-        LinearLayout intervalRow = new LinearLayout(this);
-        intervalRow.setGravity(Gravity.CENTER_VERTICAL);
-        EditText interval = new EditText(this);
-        interval.setHint("30");
-        interval.setTextColor(text);
-        interval.setHintTextColor(muted);
-        interval.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        interval.setSingleLine(true);
-        if (existing != null) interval.setText(String.valueOf(existing.getInterval()));
-        intervalRow.addView(interval, new LinearLayout.LayoutParams(0, dp(52), 1));
-
-        Spinner unit = new Spinner(this);
-        String[] units = {"minutos", "horas"};
-        unit.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, units));
-        if (existing != null && existing.getUnit() == SupportGroup.Unit.HOURS) unit.setSelection(1);
-        intervalRow.addView(unit, new LinearLayout.LayoutParams(dp(120), dp(52)));
-        form.addView(intervalRow);
-
-        CheckBox active = new CheckBox(this);
-        active.setText("Ativo");
-        active.setTextColor(text);
-        active.setChecked(existing == null || existing.isActive());
-        form.addView(active);
-
-        TextView help = muted("A notificação do grupo é apenas o gatilho inicial. Depois que o motor iniciar, os avisos continuam pelos intervalos configurados até você desligar o motor.");
-        help.setPadding(0, dp(5), 0, 0);
-        form.addView(help);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(existing == null ? "Novo grupo" : "Editar grupo")
-                .setView(form)
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton(existing == null ? "Adicionar" : "Salvar", null)
-                .create();
-
-        dialog.setOnShowListener(d -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            String gn = groupName.getText().toString().trim();
-            String msg = message.getText().toString().trim();
-            long value;
-            try { value = Long.parseLong(interval.getText().toString().trim()); }
-            catch (Exception e) { value = 0; }
-
-            if (gn.isEmpty() || msg.isEmpty() || value <= 0) {
-                Toast.makeText(this, "Preencha grupo, mensagem e intervalo.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            SupportGroup.Unit selected = unit.getSelectedItemPosition() == 1
-                    ? SupportGroup.Unit.HOURS : SupportGroup.Unit.MINUTES;
-            if (selected == SupportGroup.Unit.MINUTES && value < 1) {
-                Toast.makeText(this, "O intervalo mínimo é de 1 minuto.", Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            SupportGroup saved = new SupportGroup(
-                    existing == null ? java.util.UUID.randomUUID().toString() : existing.getId(),
-                    gn, msg, value, selected, active.isChecked());
-            supportGroupStore.save(saved);
-            status.setText("●  Grupo de suporte salvo");
-            status.setTextColor(success);
-            dialog.dismiss();
-            supportGroups();
-        }));
-        dialog.show();
-    }
-
     private void settings() {
         setActive(settingsTab);
         content.removeAllViews();
@@ -1173,10 +913,6 @@ private void automation() {
     private void showIntegration(String name) {
         if ("WhatsApp Business".equals(name)) {
             whatsappSettings();
-            return;
-        }
-        if ("Grupo de Suporte".equals(name)) {
-            supportGroups();
             return;
         }
         Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
