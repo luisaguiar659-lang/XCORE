@@ -395,12 +395,12 @@ public class MainActivity extends Activity {
         content.addView(sectionTitle("Automação", "Fluxo planejado para o provisionamento."));
 
         LinearLayout triggerBox = box();
-        TextView th = label("Gatilhos WhatsApp", 18);
+        TextView th = label("Comandos WhatsApp", 18);
         th.setTypeface(null, 1);
         triggerBox.addView(th);
-        triggerBox.addView(muted("Crie regras para decidir quais mensagens podem iniciar os fluxos do XCORE."));
+        triggerBox.addView(muted("Configure comandos, gatilhos e respostas automáticas para seus clientes."));
         Button manage = new Button(this);
-        manage.setText("⚡  Gerenciar gatilhos");
+        manage.setText("⚡  Gerenciar comandos");
         manage.setTextColor(Color.WHITE);
         manage.setAllCaps(false);
         manage.setTypeface(null, 1);
@@ -465,15 +465,15 @@ public class MainActivity extends Activity {
 
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
-        TextView h = label("Gatilhos WhatsApp", 23);
+        TextView h = label("Comandos WhatsApp", 23);
         h.setTypeface(null, 1);
         titles.addView(h);
-        titles.addView(muted("Somente mensagens correspondentes a gatilhos ativos iniciam automações."));
+        titles.addView(muted("Cada comando define o gatilho que inicia o atendimento e a resposta enviada ao cliente."));
         heading.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
         content.addView(heading);
 
         Button add = new Button(this);
-        add.setText("+  Novo gatilho");
+        add.setText("+  Novo comando");
         add.setTextColor(Color.WHITE);
         add.setAllCaps(false);
         add.setTypeface(null, 1);
@@ -487,10 +487,10 @@ public class MainActivity extends Activity {
         List<WhatsAppTrigger> triggers = triggerStore.all();
         if (triggers.isEmpty()) {
             LinearLayout empty = box();
-            TextView eh = label("Nenhum gatilho configurado", 16);
+            TextView eh = label("Nenhum comando configurado", 16);
             eh.setTypeface(null, 1);
             empty.addView(eh);
-            empty.addView(muted("Crie seu primeiro gatilho para definir quando o WhatsApp poderá iniciar um fluxo."));
+            empty.addView(muted("Adicione um comando para configurar o gatilho e a resposta automática."));
             content.addView(empty);
         } else {
             for (WhatsAppTrigger trigger : triggers) {
@@ -517,6 +517,10 @@ public class MainActivity extends Activity {
 
         String rule = trigger.getMatchType().name() + " • \"" + trigger.getPattern() + "\"";
         info.addView(muted(rule));
+        info.addView(muted("Resposta: " + (trigger.getResponse().isEmpty() ? "não configurada" : trigger.getResponse())));
+        if (!trigger.getQuestion().isEmpty()) {
+            info.addView(muted("Pergunta: " + trigger.getQuestion()));
+        }
         info.addView(muted("Fluxo: " + trigger.getFlowId()));
 
         top.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
@@ -529,7 +533,7 @@ public class MainActivity extends Activity {
             trigger.setActive(checked);
             triggerStore.add(trigger);
             buttonView.setTextColor(checked ? success : muted);
-            status.setText(checked ? "●  Gatilho ativado" : "●  Gatilho desativado");
+            status.setText(checked ? "●  Comando ativado" : "●  Comando desativado");
             status.setTextColor(checked ? success : warning);
         });
         top.addView(active);
@@ -579,12 +583,38 @@ public class MainActivity extends Activity {
         form.addView(name);
 
         EditText pattern = new EditText(this);
-        pattern.setHint("Mensagem / palavra-chave");
+        pattern.setHint("Gatilho / palavra-chave");
         pattern.setTextColor(text);
         pattern.setHintTextColor(muted);
         pattern.setSingleLine(true);
         if (existing != null) pattern.setText(existing.getPattern());
         form.addView(pattern);
+
+        EditText response = new EditText(this);
+        response.setHint("Resposta enviada ao cliente");
+        response.setTextColor(text);
+        response.setHintTextColor(muted);
+        response.setGravity(Gravity.TOP);
+        response.setMinLines(3);
+        response.setMaxLines(6);
+        response.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        if (existing != null) response.setText(existing.getResponse());
+        form.addView(response);
+
+        EditText question = new EditText(this);
+        question.setHint("Pergunta para a próxima resposta (opcional)");
+        question.setTextColor(text);
+        question.setHintTextColor(muted);
+        question.setGravity(Gravity.TOP);
+        question.setMinLines(2);
+        question.setMaxLines(4);
+        question.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        if (existing != null) question.setText(existing.getQuestion());
+        form.addView(question);
+
+        TextView help = muted("A resposta é enviada quando o comando corresponder. A pergunta pode preparar a próxima etapa da conversa.");
+        help.setPadding(0, dp(4), 0, dp(6));
+        form.addView(help);
 
         Spinner type = new Spinner(this);
         String[] types = {"CONTÉM", "EXATO", "COMEÇA COM", "PALAVRA-CHAVE"};
@@ -601,13 +631,13 @@ public class MainActivity extends Activity {
         form.addView(flow);
 
         CheckBox active = new CheckBox(this);
-        active.setText("Gatilho ativo");
+        active.setText("Comando ativo");
         active.setTextColor(text);
         active.setChecked(existing == null || existing.isActive());
         form.addView(active);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(existing == null ? "Novo gatilho" : "Editar gatilho")
+                .setTitle(existing == null ? "Novo gatilho" : "Editar comando")
                 .setView(form)
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton(existing == null ? "Criar" : "Salvar", null)
@@ -625,13 +655,23 @@ public class MainActivity extends Activity {
             WhatsAppTrigger.MatchType matchType = positionMatchType(type.getSelectedItemPosition());
             String flowId = flows[flow.getSelectedItemPosition()];
 
+            String responseText = response.getText().toString().trim();
+            String questionText = question.getText().toString().trim();
+
+            if (responseText.isEmpty()) {
+                Toast.makeText(this, "Informe a resposta que o cliente receberá.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             WhatsAppTrigger saved = existing == null
-                    ? new WhatsAppTrigger(triggerName, matchType, triggerPattern, flowId, active.isChecked())
-                    : new WhatsAppTrigger(existing.getId(), triggerName, matchType, triggerPattern, flowId, active.isChecked());
+                    ? new WhatsAppTrigger(java.util.UUID.randomUUID().toString(), triggerName, matchType, triggerPattern,
+                    flowId, responseText, questionText, active.isChecked())
+                    : new WhatsAppTrigger(existing.getId(), triggerName, matchType, triggerPattern,
+                    flowId, responseText, questionText, active.isChecked());
 
             triggerStore.add(saved);
             dialog.dismiss();
-            status.setText("●  Gatilho salvo");
+            status.setText("●  Comando salvo");
             status.setTextColor(success);
             whatsappTriggers();
         }));
@@ -661,12 +701,12 @@ public class MainActivity extends Activity {
 
     private void confirmDeleteTrigger(final WhatsAppTrigger trigger) {
         new AlertDialog.Builder(this)
-                .setTitle("Excluir gatilho")
+                .setTitle("Excluir comando")
                 .setMessage("Excluir \"" + trigger.getName() + "\"?")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Excluir", (dialog, which) -> {
                     triggerStore.remove(trigger.getId());
-                    status.setText("●  Gatilho excluído");
+                    status.setText("●  Comando excluído");
                     status.setTextColor(success);
                     whatsappTriggers();
                 })
