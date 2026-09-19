@@ -4,8 +4,6 @@ import android.app.Notification;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import com.xcore.app.engine.masterflix.MasterflixActivity;
-import com.xcore.app.engine.masterflix.MasterflixWebAutomation;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +22,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         transport = new WhatsAppNotificationTransport(this);
         engine = new WhatsAppTriggerEngine(
                 store,
-                new LocalWhatsAppFlowRouter(this, transport),
+                new LocalWhatsAppFlowRouter(),
                 new AndroidWhatsAppConversationStore(getApplicationContext()),
                 transport
         );
@@ -57,7 +55,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         String sender = extractSender(notification);
         if (sender.isEmpty()) sender = key;
 
-        transport.setReplyTarget(sender, sbn);
+        transport.setReplyTarget(sbn);
 
         WhatsAppMessage message = new WhatsAppMessage(
                 key + ":" + now,
@@ -68,17 +66,11 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         );
 
         WhatsAppResult result = engine.receive(message);
-        // O alvo fica armazenado por telefone para permitir que o Masterflix
-        // responda de forma assíncrona depois de gerar o teste no navegador.
-        if (!result.isSuccess() && result.getMessage() != null) {
-            transport.sendText(sender, "⚠️ " + result.getMessage());
-            transport.clearReplyTarget(sender);
-        }
+        if (result.isSuccess()) transport.clearReplyTarget();
     }
 
     @Override public void onDestroy() {
         if (engine != null) engine.stop();
-        if (transport != null) transport.stop();
         super.onDestroy();
     }
 
@@ -116,34 +108,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
     }
 
     private static final class LocalWhatsAppFlowRouter implements WhatsAppFlowRouter {
-        private final WhatsAppNotificationListenerService service;
-        private final WhatsAppNotificationTransport transport;
-
-        LocalWhatsAppFlowRouter(WhatsAppNotificationListenerService service, WhatsAppNotificationTransport transport) {
-            this.service = service;
-            this.transport = transport;
-        }
-
         @Override public WhatsAppResult execute(String flowId, WhatsAppMessage message) {
-            if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
-                String phone = message.getPhone();
-                MasterflixWebAutomation.request(phone, "MASTERFLIX TESTE COMPLETO 1H", transport);
-                try {
-                    android.content.Intent intent = new android.content.Intent(
-                            service,
-                            MasterflixActivity.class);
-                    intent.putExtra(MasterflixActivity.EXTRA_AUTO_TEST, true);
-                    intent.putExtra(MasterflixActivity.EXTRA_TEST_LABEL, "MASTERFLIX TESTE COMPLETO 1H");
-                    intent.putExtra(MasterflixActivity.EXTRA_PHONE, phone);
-                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-                    service.startActivity(intent);
-                    return WhatsAppResult.success("Masterflix aberto para gerar o teste", null);
-                } catch (Exception error) {
-                    MasterflixWebAutomation.finishRequest();
-                    return WhatsAppResult.error("Não foi possível abrir o Masterflix: " + error.getMessage());
-                }
-            }
-
             return WhatsAppResult.success("Fluxo " + flowId + " recebido pela notificação", null);
         }
     }
