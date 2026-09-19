@@ -259,15 +259,6 @@ public class MainActivity extends Activity {
         subtitle.setPadding(0, dp(2), 0, dp(12));
         root.addView(subtitle);
 
-        LinearLayout navs = new LinearLayout(this);
-        dashboardTab = nav("Dashboard", this::dashboard);
-        automationTab = nav("Automação", this::automation);
-        settingsTab = nav("Configurações", this::settings);
-        navs.addView(dashboardTab);
-        navs.addView(automationTab);
-        navs.addView(settingsTab);
-        root.addView(navs);
-
         status = muted("●  Sistema pronto");
         status.setTextColor(success);
         status.setPadding(dp(10), dp(10), dp(10), dp(10));
