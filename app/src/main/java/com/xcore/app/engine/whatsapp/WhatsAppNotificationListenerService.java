@@ -4,9 +4,6 @@ import android.app.Notification;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import com.xcore.app.support.SupportGroup;
-import com.xcore.app.support.SupportGroupStore;
-import com.xcore.app.support.SupportMotorService;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,10 +55,6 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         String sender = extractSender(notification);
         if (sender.isEmpty()) sender = key;
 
-        // O aviso do grupo é o gatilho do Motor de Suporte. A partir daqui,
-        // o motor fica ativo até o usuário desligá-lo manualmente.
-        activateSupportMotorIfConfigured(notification);
-
         transport.setReplyTarget(sbn);
 
         WhatsAppMessage message = new WhatsAppMessage(
@@ -97,32 +90,6 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
         if (lines != null && lines.length > 0) return lines[lines.length - 1];
         return null;
-    }
-
-    private void activateSupportMotorIfConfigured(Notification notification) {
-        String groupName = extractGroupName(notification);
-        if (groupName.isEmpty()) return;
-
-        for (SupportGroup group : new SupportGroupStore(getApplicationContext()).list()) {
-            if (!group.isActive()) continue;
-            if (!groupName.equalsIgnoreCase(group.getGroupName().trim())) continue;
-            SupportMotorService.startFromSupportNotification(getApplicationContext(), group.getGroupName());
-            break;
-        }
-    }
-
-    private String extractGroupName(Notification notification) {
-        Bundle extras = notification.extras;
-        if (extras == null) return "";
-
-        CharSequence conversation = extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE);
-        if (conversation != null && conversation.length() > 0) return conversation.toString().trim();
-
-        CharSequence titleBig = extras.getCharSequence(Notification.EXTRA_TITLE_BIG);
-        if (titleBig != null && titleBig.length() > 0) return titleBig.toString().trim();
-
-        CharSequence title = extras.getCharSequence(Notification.EXTRA_TITLE);
-        return title == null ? "" : title.toString().trim();
     }
 
     private String extractSender(Notification notification) {
