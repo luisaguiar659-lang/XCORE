@@ -69,7 +69,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         );
 
         WhatsAppResult result = engine.receive(message);
-        if (result.isSuccess()) transport.clearReplyTarget();
+        if (result.isSuccess() && !MasterflixWebAutomation.hasRequest()) transport.clearReplyTarget();
     }
 
     @Override public void onDestroy() {
