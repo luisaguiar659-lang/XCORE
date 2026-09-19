@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Regra configurável que decide quando uma mensagem deve iniciar um fluxo.
+ * Comando configurável que decide quando uma mensagem deve iniciar um fluxo.
  */
 public final class WhatsAppTrigger {
 
@@ -20,19 +20,28 @@ public final class WhatsAppTrigger {
     private final MatchType matchType;
     private final String pattern;
     private final String flowId;
+    private String response;
+    private String question;
     private boolean active;
 
     public WhatsAppTrigger(String name, MatchType matchType, String pattern, String flowId, boolean active) {
-        this(UUID.randomUUID().toString(), name, matchType, pattern, flowId, active);
+        this(UUID.randomUUID().toString(), name, matchType, pattern, flowId, "", "", active);
     }
 
     public WhatsAppTrigger(String id, String name, MatchType matchType, String pattern,
                             String flowId, boolean active) {
+        this(id, name, matchType, pattern, flowId, "", "", active);
+    }
+
+    public WhatsAppTrigger(String id, String name, MatchType matchType, String pattern,
+                            String flowId, String response, String question, boolean active) {
         this.id = id;
         this.name = name == null ? "" : name.trim();
         this.matchType = matchType == null ? MatchType.CONTAINS : matchType;
         this.pattern = pattern == null ? "" : pattern.trim();
         this.flowId = flowId == null ? "" : flowId.trim();
+        this.response = response == null ? "" : response;
+        this.question = question == null ? "" : question;
         this.active = active;
     }
 
@@ -67,6 +76,11 @@ public final class WhatsAppTrigger {
     public MatchType getMatchType() { return matchType; }
     public String getPattern() { return pattern; }
     public String getFlowId() { return flowId; }
+    public String getResponse() { return response; }
+    public String getQuestion() { return question; }
     public boolean isActive() { return active; }
+
     public void setActive(boolean active) { this.active = active; }
+    public void setResponse(String response) { this.response = response == null ? "" : response; }
+    public void setQuestion(String question) { this.question = question == null ? "" : question; }
 }
