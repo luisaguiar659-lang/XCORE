@@ -39,12 +39,19 @@ public final class SupportMotorNotification {
                 .setContentTitle("XCORE • Motor de Suporte")
                 .setContentText(status)
                 .setOngoing(running)
+                .setContentIntent(mainActivityPendingIntent(c))
                 .setOnlyAlertOnce(true)
                 .setAutoCancel(!running)
                 .setPriority(Notification.PRIORITY_LOW)
                 .addAction(new Notification.Action.Builder(null, actionText, p).build());
         if (Build.VERSION.SDK_INT >= 31) b.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
         return b.build();
+    }
+
+    private static PendingIntent mainActivityPendingIntent(Context c) {
+        Intent i = new Intent(c, com.xcore.app.MainActivity.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        return PendingIntent.getActivity(c, 4202, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     public static void showStopped(Context c) {
