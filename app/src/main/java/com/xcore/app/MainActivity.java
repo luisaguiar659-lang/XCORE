@@ -639,7 +639,7 @@ private void automation() {
         form.addView(type);
 
         Spinner flow = new Spinner(this);
-        String[] flows = {WhatsAppFlowIds.TESTE_CLIENTE, WhatsAppFlowIds.VENDA, WhatsAppFlowIds.SUPORTE};
+        String[] flows = {"Resposta automática", "Masterflix • Gerar teste 1H", "Venda"};
         flow.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, flows));
         if (existing != null) flow.setSelection(flowPosition(existing.getFlowId()));
         form.addView(flow);
@@ -667,13 +667,17 @@ private void automation() {
             }
 
             WhatsAppTrigger.MatchType matchType = positionMatchType(type.getSelectedItemPosition());
-            String flowId = flows[flow.getSelectedItemPosition()];
+            String flowId = flowIdFromPosition(flow.getSelectedItemPosition());
 
             String responseText = response.getText().toString().trim();
             String questionText = question.getText().toString().trim();
 
+            if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId) && !responseText.isEmpty()) {
+                Toast.makeText(this, "Para gerar o teste, deixe a resposta vazia. O XCORE executará o Masterflix automaticamente.", Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (responseText.isEmpty() && !WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
-                Toast.makeText(this, "Informe a resposta ou use o fluxo Teste do Masterflix.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Informe a resposta para este comando.", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -709,9 +713,15 @@ private void automation() {
     }
 
     private int flowPosition(String flowId) {
-        if (WhatsAppFlowIds.VENDA.equals(flowId)) return 1;
-        if (WhatsAppFlowIds.SUPORTE.equals(flowId)) return 2;
+        if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) return 1;
+        if (WhatsAppFlowIds.VENDA.equals(flowId)) return 2;
         return 0;
+    }
+
+    private String flowIdFromPosition(int position) {
+        if (position == 1) return WhatsAppFlowIds.TESTE_CLIENTE;
+        if (position == 2) return WhatsAppFlowIds.VENDA;
+        return ""; 
     }
 
     private void confirmDeleteTrigger(final WhatsAppTrigger trigger) {
@@ -780,7 +790,7 @@ private void automation() {
         TextView ch = label("Comandos e gatilhos", 17);
         ch.setTypeface(null, 1);
         commands.addView(ch);
-        commands.addView(muted("Configure as palavras que iniciam o atendimento e as respostas automáticas."));
+        commands.addView(muted("Configure o gatilho inicial e escolha se ele responde com texto ou gera um teste Masterflix."));
         Button manage = smallAction("Gerenciar comandos");
         manage.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
         manage.setOnClickListener(v -> whatsappTriggers());
