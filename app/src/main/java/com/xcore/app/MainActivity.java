@@ -8,6 +8,7 @@ import android.provider.Settings;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.*;
@@ -18,6 +19,7 @@ import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import com.xcore.app.support.SupportGroup;
 import com.xcore.app.support.SupportGroupScheduler;
 import com.xcore.app.support.SupportWhatsAppAccessibilityService;
+import com.xcore.app.support.SupportMotorNotification;
 import com.xcore.app.support.SupportGroupStore;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +54,10 @@ public class MainActivity extends Activity {
         backendConfig = new WhatsAppBackendConfig(this);
         supportGroupStore = new SupportGroupStore(this);
         build();
+        SupportMotorNotification.ensureChannel(this);
+        if (Build.VERSION.SDK_INT < 33 || checkSelfPermission("android.permission.POST_NOTIFICATIONS") == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            SupportMotorNotification.showStopped(this);
+        }
         syncCommandsFromBackend();
     }
 
@@ -734,6 +740,10 @@ private void automation() {
 
     
     private void supportGroups() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7001);
+        }
+
         setActive(dashboardTab);
         content.removeAllViews();
 
