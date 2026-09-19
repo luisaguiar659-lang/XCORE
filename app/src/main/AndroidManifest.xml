@@ -23,10 +23,6 @@
         </activity>
 
         <receiver
-            android:name=".support.SupportGroupAlarmReceiver"
-            android:exported="false" />
-
-        <receiver
             android:name=".support.SupportMotorActionReceiver"
             android:exported="false" />
 
