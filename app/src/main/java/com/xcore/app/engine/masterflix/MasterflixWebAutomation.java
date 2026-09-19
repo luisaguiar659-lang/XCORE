@@ -56,9 +56,12 @@ public final class MasterflixWebAutomation {
                 + "});"
                 + "if(target){"
                 + "clearInterval(window.__xcoreMasterflixTimer);"
-                + "target.scrollIntoView({block:'center',behavior:'instant'});"
-                + "setTimeout(function(){target.click();"
-                + "setTimeout(function(){window.XCORE.waitDetails();},700);},250);"
+                + "var clickable=target.closest('button,a,[role=button]')||target;"
+                + "clickable.scrollIntoView({block:'center',behavior:'instant'});"
+                + "setTimeout(function(){"
+                + "clickable.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));"
+                + "setTimeout(function(){window.XCORE.waitDetails();},900);"
+                + "},250);"
                 + "}"
                 + "if(tries>45){clearInterval(window.__xcoreMasterflixTimer);window.XCORE.error('Não encontrei o teste '+wanted+'.');}"
                 + "},500);"
@@ -91,8 +94,9 @@ public final class MasterflixWebAutomation {
                         + "var buttons=[].slice.call(document.querySelectorAll('button,a,[role=button]'));"
                         + "var closeCopy=buttons.find(function(e){return /Copiar\\s*e\\s*Fechar/i.test((e.innerText||e.textContent||''));});"
                         + "if(details&&hasCredentials){"
-                        + "if(closeCopy){closeCopy.click();}"
-                        + "return JSON.stringify({ok:true,body:body});"
+                        + "var result=JSON.stringify({ok:true,body:body});"
+                        + "if(closeCopy){setTimeout(function(){closeCopy.click();},150);}"
+                        + "return result;"
                         + "}"
                         + "return JSON.stringify({ok:false,body:body});"
                         + "})()";
@@ -146,9 +150,15 @@ public final class MasterflixWebAutomation {
     }
 
     private static void deliver(WebView webView, String text) {
+        String message = "🎬 TESTE GERADO\n\n" + text;
+        if (transport != null && pendingPhone != null && !pendingPhone.trim().isEmpty()) {
+            transport.sendText(pendingPhone, message);
+            transport.clearReplyTarget();
+        }
         if (webView.getContext() instanceof MasterflixActivity) {
-            ((MasterflixActivity) webView.getContext())
-                    .finishAutomation("🎬 TESTE GERADO\n\n" + text, null);
+            ((MasterflixActivity) webView.getContext()).finishAutomation(message, null);
+        } else {
+            finishRequest();
         }
     }
 
