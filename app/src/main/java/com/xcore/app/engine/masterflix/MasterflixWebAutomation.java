@@ -156,7 +156,7 @@ public final class MasterflixWebAutomation {
         running = false;
         if (transport != null && pendingPhone != null) {
             transport.sendText(pendingPhone, "⚠️ Não foi possível gerar o teste no Masterflix: " + error);
-            transport.clearReplyTarget(pendingPhone);
+            transport.clearReplyTarget();
         }
         pendingPhone = null;
         pendingLabel = null;
@@ -173,7 +173,7 @@ public final class MasterflixWebAutomation {
     public static void sendToWhatsApp(String phone, String text) {
         if (transport != null && phone != null) {
             transport.sendText(phone, text);
-            transport.clearReplyTarget(phone);
+            transport.clearReplyTarget();
         }
     }
 }
