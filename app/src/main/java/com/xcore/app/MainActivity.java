@@ -920,8 +920,8 @@ private void automation() {
             }
             SupportGroup.Unit selected = unit.getSelectedItemPosition() == 1
                     ? SupportGroup.Unit.HOURS : SupportGroup.Unit.MINUTES;
-            if (selected == SupportGroup.Unit.MINUTES && value < 15) {
-                Toast.makeText(this, "Para execução em segundo plano, use pelo menos 15 minutos.", Toast.LENGTH_LONG).show();
+            if (selected == SupportGroup.Unit.MINUTES && value < 1) {
+                Toast.makeText(this, "O intervalo mínimo é de 1 minuto.", Toast.LENGTH_LONG).show();
                 return;
             }
 
