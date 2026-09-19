@@ -109,6 +109,7 @@ public final class MasterflixActivity extends Activity {
         testButton.setAllCaps(false);
         testButton.setTypeface(null, 1);
         testButton.setBackgroundColor(Color.rgb(25, 170, 100));
+        testButton.setPadding(12, 0, 12, 0);
         testButton.setOnClickListener(v -> {
             testButton.setEnabled(false);
             testButton.setText("Gerando teste...");
@@ -116,8 +117,8 @@ public final class MasterflixActivity extends Activity {
         });
 
         FrameLayout.LayoutParams buttonParams =
-                new FrameLayout.LayoutParams(-1, 58, Gravity.BOTTOM);
-        buttonParams.setMargins(18, 0, 18, 18);
+                new FrameLayout.LayoutParams(-1, 64, Gravity.BOTTOM);
+        buttonParams.setMargins(18, 0, 18, 82);
         content.addView(testButton, buttonParams);
 
         root.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
