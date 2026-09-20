@@ -389,6 +389,7 @@ public class MainActivity extends Activity {
         content.addView(sectionTitle("Dashboard", "Visão geral do XCORE."));
 
         addIntegration(R.drawable.whatsapp_logo, "WhatsApp Business", "Canal de atendimento");
+        addIntegration(R.drawable.xcore_logo, "Master Banner", "Criação e gerenciamento de banners");
 
         Space bottomSpace = new Space(this);
         content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(82)));
@@ -878,6 +879,10 @@ private void automation() {
     private void showIntegration(String name) {
         if ("WhatsApp Business".equals(name)) {
             whatsappSettings();
+            return;
+        }
+        if ("Master Banner".equals(name)) {
+            startActivity(new Intent(this, MasterBannerActivity.class));
             return;
         }
         Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
