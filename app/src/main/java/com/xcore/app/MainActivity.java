@@ -419,34 +419,6 @@ private void automation() {
         triggerBox.addView(manage);
         content.addView(triggerBox);
 
-        for (int i = 0; i < steps.length; i++) {
-            LinearLayout card = box();
-            card.setPadding(dp(14), dp(14), dp(14), dp(14));
-
-            LinearLayout row = new LinearLayout(this);
-            row.setGravity(Gravity.CENTER_VERTICAL);
-
-            TextView number = label(steps[i][0], 12);
-            number.setTextColor(Color.WHITE);
-            number.setGravity(Gravity.CENTER);
-            number.setTypeface(null, 1);
-            number.setBackground(background(accent, 12));
-            row.addView(number, new LinearLayout.LayoutParams(dp(42), dp(42)));
-
-            LinearLayout info = new LinearLayout(this);
-            info.setOrientation(LinearLayout.VERTICAL);
-            info.setPadding(dp(13), 0, 0, 0);
-
-            TextView step = label(steps[i][1], 15);
-            step.setTypeface(null, 1);
-            info.addView(step);
-            info.addView(muted(steps[i][2]));
-
-            row.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
-            row.addView(chip("PENDENTE", warning, Color.rgb(62, 48, 27)));
-            card.addView(row);
-            content.addView(card);
-        }
     }
 
     private void whatsappTriggers() {
