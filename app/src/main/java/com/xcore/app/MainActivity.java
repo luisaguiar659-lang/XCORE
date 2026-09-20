@@ -389,8 +389,6 @@ public class MainActivity extends Activity {
         content.addView(sectionTitle("Dashboard", "Visão geral do XCORE."));
 
         addIntegration(R.drawable.whatsapp_logo, "WhatsApp Business", "Canal de atendimento");
-        addIntegration(R.drawable.master_xcloud_logo, "Master XCloud", "Provisionamento");
-        addIntegration(R.drawable.master_ibo_logo, "Master IBO", "Gestão do cliente");
 
         Space bottomSpace = new Space(this);
         content.addView(bottomSpace, new LinearLayout.LayoutParams(1, dp(82)));
