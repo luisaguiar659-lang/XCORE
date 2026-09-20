@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.*;
 import com.xcore.app.engine.whatsapp.AndroidWhatsAppTriggerStore;
 import com.xcore.app.engine.whatsapp.WhatsAppBackendConfig;
-import com.xcore.app.engine.whatsapp.WhatsAppFlowIds;
 import com.xcore.app.engine.whatsapp.WhatsAppTrigger;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -320,10 +319,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void openMasterflix() {
-        startActivity(new Intent(this, com.xcore.app.engine.masterflix.MasterflixActivity.class));
-    }
-
     private void addNotificationAccessCard() {
         boolean granted = isNotificationAccessGranted();
         LinearLayout card = box();
@@ -394,7 +389,6 @@ public class MainActivity extends Activity {
         content.addView(sectionTitle("Dashboard", "Visão geral do XCORE."));
 
         addIntegration(R.drawable.whatsapp_logo, "WhatsApp Business", "Canal de atendimento");
-        addIntegration(R.drawable.masterflix_logo, "Masterflix", "Criação de testes");
         addIntegration(R.drawable.master_xcloud_logo, "Master XCloud", "Provisionamento");
         addIntegration(R.drawable.master_ibo_logo, "Master IBO", "Gestão do cliente");
 
@@ -405,7 +399,7 @@ public class MainActivity extends Activity {
 private void automation() {
         setActive(automationTab);
         content.removeAllViews();
-        content.addView(sectionTitle("Automação", "Fluxo real do teste Masterflix pelo navegador."));
+        content.addView(sectionTitle("Automação", "Comandos e respostas automáticas do WhatsApp."));
 
         LinearLayout triggerBox = box();
         TextView th = label("Comandos WhatsApp", 18);
@@ -424,15 +418,6 @@ private void automation() {
         manage.setOnClickListener(v -> whatsappTriggers());
         triggerBox.addView(manage);
         content.addView(triggerBox);
-
-        String[][] steps = {
-            {"01", "Receber mensagem", "WhatsApp Business"},
-            {"02", "Cliente escolhe Teste", "Gatilho configurado"},
-            {"03", "Abrir Masterflix", "Chrome"},
-            {"04", "Selecionar o teste", "Masterflix"},
-            {"05", "Copiar os dados gerados", "Masterflix"},
-            {"06", "Enviar o teste", "WhatsApp Business"}
-        };
 
         for (int i = 0; i < steps.length; i++) {
             LinearLayout card = box();
@@ -639,7 +624,7 @@ private void automation() {
         form.addView(type);
 
         Spinner flow = new Spinner(this);
-        String[] flows = {"Resposta automática", "Masterflix • Gerar teste 1H", "Venda"};
+        String[] flows = {"Resposta automática", "Venda"};
         flow.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, flows));
         if (existing != null) flow.setSelection(flowPosition(existing.getFlowId()));
         form.addView(flow);
@@ -672,10 +657,6 @@ private void automation() {
             String responseText = response.getText().toString().trim();
             String questionText = question.getText().toString().trim();
 
-            if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId) && !responseText.isEmpty()) {
-                Toast.makeText(this, "Para gerar o teste, deixe a resposta vazia. O XCORE executará o Masterflix automaticamente.", Toast.LENGTH_SHORT).show();
-                return;
-            }
             if (responseText.isEmpty() && !WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
                 Toast.makeText(this, "Informe a resposta para este comando.", Toast.LENGTH_SHORT).show();
                 return;
@@ -713,15 +694,13 @@ private void automation() {
     }
 
     private int flowPosition(String flowId) {
-        if (WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) return 1;
-        if (WhatsAppFlowIds.VENDA.equals(flowId)) return 2;
+        if ("venda".equals(flowId)) return 1;
         return 0;
     }
 
     private String flowIdFromPosition(int position) {
-        if (position == 1) return WhatsAppFlowIds.TESTE_CLIENTE;
-        if (position == 2) return WhatsAppFlowIds.VENDA;
-        return ""; 
+        if (position == 1) return "venda";
+        return "";
     }
 
     private void confirmDeleteTrigger(final WhatsAppTrigger trigger) {
@@ -940,10 +919,6 @@ private void automation() {
     private void showIntegration(String name) {
         if ("WhatsApp Business".equals(name)) {
             whatsappSettings();
-            return;
-        }
-        if ("Masterflix".equals(name)) {
-            openMasterflix();
             return;
         }
         Toast.makeText(this, name + " • configuração disponível em breve", Toast.LENGTH_SHORT).show();
