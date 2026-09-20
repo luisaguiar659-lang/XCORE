@@ -11,6 +11,11 @@
         android:supportsRtl="true">
 
         <activity
+            android:name=".MasterBannerActivity"
+            android:exported="false"
+            android:label="Master Banner" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
