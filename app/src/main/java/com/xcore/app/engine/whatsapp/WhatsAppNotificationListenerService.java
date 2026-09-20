@@ -33,7 +33,7 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
         transport = new WhatsAppNotificationTransport(this);
         engine = new WhatsAppTriggerEngine(
                 store,
-                new LocalWhatsAppFlowRouter(this),
+                new LocalWhatsAppFlowRouter(),
                 new AndroidWhatsAppConversationStore(getApplicationContext()),
                 transport
         );
