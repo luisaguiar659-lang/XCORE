@@ -11,12 +11,6 @@
         android:supportsRtl="true">
 
         <activity
-            android:name=".engine.masterflix.MasterflixActivity"
-            android:label="Masterflix"
-            android:screenOrientation="portrait"
-            android:exported="false" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
