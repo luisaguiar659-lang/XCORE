@@ -174,19 +174,6 @@ public final class WhatsAppNotificationListenerService extends NotificationListe
 
                     CharSequence rawSender = item.getCharSequence("sender");
                     String sender = rawSender == null ? "" : rawSender.toString().trim();
-                    if (sender.isEmpty() && Build.VERSION.SDK_INT >= 28) {
-                        try {
-                            Bundle personBundle = item.getBundle("person");
-                            if (personBundle != null) {
-                                Person person = Person.fromBundle(personBundle);
-                                if (person != null && person.getName() != null) {
-                                    sender = person.getName().toString().trim();
-                                }
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-
                     boolean self = sender.isEmpty()
                             || (!selfName.isEmpty() && selfName.equalsIgnoreCase(sender));
 
