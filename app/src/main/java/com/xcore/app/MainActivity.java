@@ -627,7 +627,7 @@ private void automation() {
             String responseText = response.getText().toString().trim();
             String questionText = question.getText().toString().trim();
 
-            if (responseText.isEmpty() && !WhatsAppFlowIds.TESTE_CLIENTE.equals(flowId)) {
+            if (responseText.isEmpty()) {
                 Toast.makeText(this, "Informe a resposta para este comando.", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -745,17 +745,6 @@ private void automation() {
         manage.setOnClickListener(v -> whatsappTriggers());
         commands.addView(manage);
         content.addView(commands);
-
-        LinearLayout masterflix = box();
-        TextView mh = label("Masterflix", 17);
-        mh.setTypeface(null, 1);
-        masterflix.addView(mh);
-        masterflix.addView(muted("Abra o painel Masterflix dentro do XCORE em uma WebView, com login persistente."));
-        Button openMasterflix = smallAction("Abrir Masterflix");
-        openMasterflix.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(46)));
-        openMasterflix.setOnClickListener(v -> openMasterflix());
-        masterflix.addView(openMasterflix);
-        content.addView(masterflix);
 
         LinearLayout security = box();
         TextView sh = label("Status do módulo", 17);
